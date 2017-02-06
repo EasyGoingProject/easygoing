@@ -3,15 +3,15 @@ using System.Collections;
 
 public class InputControl : MonoBehaviour
 {
-    public static float moveY;
-    public static float moveX;
+    public static float MoveY;
+    public static float MoveX;
     public static bool isMoving = false;
 
-    void Update()
+    void FixedUpdate()
     {
-        moveY = Input.GetAxis("Vertical");
-        moveX = Input.GetAxis("Horizontal");
-
-        isMoving = (Mathf.Abs(moveX) > 0 || Mathf.Abs(moveY) > 0);
+        MoveY = Input.GetAxis("Vertical");
+        MoveX = Input.GetAxis("Horizontal");
+        
+        isMoving = (Mathf.Abs(MoveX) > 0 || Mathf.Abs(MoveY) > 0);
     }
 }

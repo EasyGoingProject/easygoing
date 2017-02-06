@@ -1,5 +1,4 @@
-﻿using UnityEngine;
-using System;
+﻿using System;
 
 [Serializable]
 public struct CharacterData

@@ -1,14 +1,16 @@
-﻿using UnityEngine;
+﻿// 게임 시스템 전체에 사용될 변수를 미리 지정
 
 public static class GlobalData
 {
     #region [ System ]
 
+    // InvokeRepeat시 사용될 업데이트 프레임 
     public const float TICKTOCK = 0.1f;
 
     #endregion
 
 
+    // 씬명 변수로 할당
     #region [ Scene ]
 
     public static string SCENE_BATTLE = "Battle";
@@ -16,6 +18,7 @@ public static class GlobalData
     #endregion
 
 
+    // 레이어명 변수로 할당
     #region [ Layer ]
 
     public static string LAYER_PLAYER = "Player";
@@ -27,6 +30,7 @@ public static class GlobalData
     #endregion
 
 
+    // 태그 변수로 할당
     #region [ Tag ]
 
     public static string TAG_PLAYER = "Player";
@@ -37,6 +41,7 @@ public static class GlobalData
     #endregion
 
 
+    // 애니메이터 파라미터명 및 태그 변수로 할당
     #region [ Animator ]
 
     public const string TRIGGER_ATTACK_NONE = "AttackNormal";
@@ -54,6 +59,7 @@ public static class GlobalData
     #endregion
 
 
+    // Input 버튼명 변수로 할당
     #region [ Button ]
 
     public static string BUTTON_FIRE = "Fire1";
@@ -62,6 +68,8 @@ public static class GlobalData
     #endregion
 }
 
+
+// 캐릭터명 타입
 public enum CharacterType
 {
     Character001 = 0,
@@ -73,6 +81,8 @@ public enum CharacterType
     Character007
 }
 
+
+// 무기 타입
 public enum WeaponType
 {
     NONE = 0,
@@ -81,6 +91,8 @@ public enum WeaponType
     THROW
 }
 
+
+// 아이템 타입
 public enum ItemType
 {
     HEALTH = 0,

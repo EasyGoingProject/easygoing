@@ -17,3 +17,5 @@ MonoBehaviour:
     moveSpeed: 3
     rotateSpeed: 8
     power: 1
+    health: 100
+    texCharacter: {fileID: 2800000, guid: 849e859ad6cd26d40b87b54b67a58538, type: 3}

@@ -12,19 +12,36 @@ MonoBehaviour:
   m_Name: WeaponDB
   m_EditorClassIdentifier: 
   weaponDatas:
-  - weaponName: "\uC5C6\uC74C"
+  - weaponName: "\uC8FC\uBA39"
     weaponType: 0
-    damage: 3
+    damage: 15
     cooltime: 0.8
+    attackObject: {fileID: 1000012568755798, guid: 29a396b0e5c66f54d9017d503d15308b,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 3
+    attackObjectSpeed: 0
   - weaponName: "\uCC3D"
     weaponType: 1
     damage: 10
     cooltime: 1.4
+    attackObject: {fileID: 0}
+    attackActiveDelay: 0
+    attackActiveDuration: 0
+    attackObjectSpeed: 0
   - weaponName: "\uD65C"
     weaponType: 2
     damage: 25
     cooltime: 2
+    attackObject: {fileID: 0}
+    attackActiveDelay: 0
+    attackActiveDuration: 0
+    attackObjectSpeed: 0
   - weaponName: "\uB3CC"
     weaponType: 3
     damage: 10
     cooltime: 1.7
+    attackObject: {fileID: 0}
+    attackActiveDelay: 0
+    attackActiveDuration: 0
+    attackObjectSpeed: 0

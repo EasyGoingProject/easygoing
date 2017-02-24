@@ -7,6 +7,8 @@ TagManager:
   - Ground
   - Wall
   - Item
+  - Enemy
+  - WALL
   layers:
   - Default
   - TransparentFX
@@ -21,11 +23,11 @@ TagManager:
   - Field
   - Weapon
   - Bullet
-  - 
-  - 
-  - 
-  - 
-  - 
+  - SpawnPoint
+  - Item
+  - IgnoreView
+  - EnemyAttack
+  - PlayerAttack
   - 
   - 
   - 

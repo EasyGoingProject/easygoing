@@ -1,5 +1,6 @@
 ﻿// 무기 각각의 데이터 구조체
 
+using UnityEngine;
 using System;
 
 [Serializable]
@@ -13,4 +14,12 @@ public struct WeaponData
     public float damage;
     // 무기 쿨타임
     public float cooltime;
+    // 공격 오브젝트
+    public GameObject attackObject;
+    // 공격 오브젝트 생성 시간
+    public float attackActiveDelay;
+    // 공격 오브젝트 유지 시간
+    public float attackActiveDuration;
+    // 공격 오브젝트 속도
+    public float attackObjectSpeed;
 }

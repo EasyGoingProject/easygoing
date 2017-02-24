@@ -15,13 +15,20 @@ public class PlayerAttack : MonoBehaviour
     private float cooltimer = .0f;
     // 공격가능 유무 확인 - 쿨타임파트
     private bool canAttackCool = false;
+    // 공격력 배율
+    private float power;
+
+
+    public Transform attackPoint;
 
 
     // 컴포넌트 초기화
-    public void InitWeapon()
+    public void InitWeapon(float _power)
     {
+        power = _power;
+
         // 무기가 없는 상태의 무기정보를 받아옴
-        GetWeapon(WeaponType.NONE);
+        GetWeapon(WeaponType.HAND);
 
         // 쿨타입 업데이트
         InvokeRepeating("UpdateWeaponCool", 0.0f, GlobalData.TICKTOCK);
@@ -45,9 +52,20 @@ public class PlayerAttack : MonoBehaviour
     }
 
     // 공격처리
-    public void Attack()
+    public IEnumerator Attack()
     {
         ResetAttack();
+
+        yield return new WaitForSeconds(currentWeaponData.attackActiveDelay);
+
+        GameObject attackObj = Instantiate(currentWeaponData.attackObject) as GameObject;
+        attackObj.transform.position = attackPoint.position;
+        attackObj.transform.rotation = attackPoint.rotation;
+
+        attackObj.GetComponent<PlayerAttackObject>().SetAttack(
+            currentWeaponData.attackActiveDuration,
+            currentWeaponData.attackObjectSpeed,
+            currentWeaponData.damage * power);
     }
 
     // 공격 초기화

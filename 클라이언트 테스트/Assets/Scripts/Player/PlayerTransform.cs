@@ -17,22 +17,17 @@ public class PlayerTransform : MonoBehaviour
     // 플레이어의 강체가 포함된 오브젝트 할당
     public Rigidbody playerRigid;
 
-
-    [Header("[ Transform Status ]")]
-    // 점프할 힘
-    public float jumpForce = 10.0f;
-
-
+    
     // 속도값이 포함된 플레이어 정보 할당
     private CharacterData characterData;
-
-    private RaycastHit hit;
 
 
     // 컴포넌트 초기화
     public void InitTransform(CharacterData _characterData)
     {
         characterData = _characterData;
+
+        InitJumpRay();
 
         isInit = true;
     }
@@ -66,16 +61,38 @@ public class PlayerTransform : MonoBehaviour
         }
     }
 
-    // 땅인지 확인 -> 점프 가능 확인
+
+
+    #region [ Jump ]
+
+    [Header("[ Jump ]")]
+    // 점프할 힘
+    public float jumpForce = 10.0f;
+    
+    // 땅체크 레이캐스트용
+    private RaycastHit jumpRayhit;
+    private float jumpGroundRayOffsetY = 0.1f;
+    private LayerMask jumpGroundRayLayer;
+    private Vector3 jumpGroundPos;
+
+    private void InitJumpRay()
+    {
+        jumpGroundRayLayer = 1 << LayerMask.NameToLayer(GlobalData.LAYER_FIELD);
+    }
+
+    // 땅인지 확인
     public bool IsGround
     {
         get
         {
-            // 바닥을 향해 레이캐스트를 쏴서 땅인지 확인
-            Debug.DrawRay(playerTrans.position, Vector3.down * 0.9f, Color.red, 3.0f);
+            jumpGroundPos = playerTrans.position;
+            jumpGroundPos.y += jumpGroundRayOffsetY;
 
-            if (Physics.Raycast(playerTrans.position, Vector3.down, out hit, 0.9f))
-                return hit.transform.CompareTag(GlobalData.TAG_GROUND);
+            // 바닥을 향해 레이캐스트를 쏴서 땅인지 확인
+            Debug.DrawRay(jumpGroundPos, Vector3.down * 0.9f, Color.red, 3.0f);
+
+            if (Physics.Raycast(jumpGroundPos, Vector3.down, out jumpRayhit, 0.9f, jumpGroundRayLayer))
+                return jumpRayhit.transform.CompareTag(GlobalData.TAG_GROUND);
             else return false;
         }
     }
@@ -85,4 +102,6 @@ public class PlayerTransform : MonoBehaviour
     {
         playerRigid.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
+
+    #endregion
 }

@@ -37,8 +37,8 @@ public class PlayerAnimator : MonoBehaviour
     {
         switch (weaponType)
         {
-            case WeaponType.NONE:
-                playerAnimator.SetTrigger(GlobalData.TRIGGER_ATTACK_NONE);
+            case WeaponType.HAND:
+                playerAnimator.SetTrigger(GlobalData.TRIGGER_ATTACK_HAND);
                 break;
 
             case WeaponType.SPEAR:
@@ -59,6 +59,12 @@ public class PlayerAnimator : MonoBehaviour
     public void JumpAnimation()
     {
         playerAnimator.SetTrigger(GlobalData.TRIGGER_JUMP);
+    }
+
+    // 사망 애니메이션 재생
+    public void DieAnimation()
+    {
+        playerAnimator.SetTrigger(GlobalData.TRIGGER_DIE);
     }
 
     // 재생중인 애니메이션이 공격 애니메이션인지 확인

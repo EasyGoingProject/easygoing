@@ -14,15 +14,15 @@ public class PlayerControl : MonoBehaviour
     // 캐릭터 데이터베이스에서 가져올 Data를 할당할 변수
     private CharacterData characterData;
 
-    
-    // 현재 공격중인지 체크
-    public bool isAttacking = false;
-    
+    public PlayerState playerState;
 
+    
     // 하위 플레이어 컴포넌트들
     private PlayerTransform playerTransform;
     private PlayerAnimator playerAnimator;
     private PlayerAttack playerAttack;
+
+    private PlayerInfo playerInfo;
 
 
     void Awake()
@@ -39,21 +39,35 @@ public class PlayerControl : MonoBehaviour
 
     void Start()
     {
+        Init();
+    }
+
+    private void Init()
+    {
         // 하위 컴포넌트들 초기화
         playerTransform.InitTransform(characterData);
         playerAnimator.InitAnimator();
-        playerAttack.InitWeapon();
+        playerAttack.InitWeapon(characterData.power);
+
+        playerState.currentHealth = characterData.health;
+        playerState.isAttacking = false;
+        playerState.isLive = true;
+
+        playerInfo = UIManager.GetInstance.AddPlayerInfo(characterData);
         // ----- //
     }
 
     void Update()
     {
+        if (!playerState.isLive)
+            return;
+
         // 공격 가능시
         if(Input.GetButton(GlobalData.BUTTON_FIRE) 
             && playerAttack.CanAttack)
         {
             // 플레이어 공격 컴포넌트에 공격 전달
-            playerAttack.Attack();
+            StartCoroutine(playerAttack.Attack());
             // 플레이어 애니메이터 컴포넌트에 공격 전달
             playerAnimator.AttackAnimation(playerAttack.GetWeaponType());
         }
@@ -76,5 +90,21 @@ public class PlayerControl : MonoBehaviour
         }
         // 플레이어 애니메이터 컴포넌트 업데이트
         playerAnimator.UpdateAnimator();
+    }
+
+    public void LossHealth(float amount)
+    {
+        playerState.currentHealth = Mathf.Clamp(playerState.currentHealth - amount, 0, playerState.currentHealth);
+        playerState.isLive = playerState.currentHealth > 0;
+
+        playerInfo.SetHealth(playerState.currentHealth / characterData.health);
+
+        if (!playerState.isLive)
+            Die();
+    }
+
+    private void Die()
+    {
+        playerAnimator.DieAnimation();
     }
 }

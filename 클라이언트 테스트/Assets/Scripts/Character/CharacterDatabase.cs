@@ -4,7 +4,7 @@
 using UnityEngine;
 using System;
 
-[CreateAssetMenu]
+[CreateAssetMenu(menuName = "Database/CharacterDatabase")]
 public class CharacterDatabase : ScriptableObject
 {
     // 시리얼라이즈된 구조체 배열

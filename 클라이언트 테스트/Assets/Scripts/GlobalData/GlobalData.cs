@@ -26,6 +26,10 @@ public static class GlobalData
     public static string LAYER_FIELD = "Field";
     public static string LAYER_WEAPON = "Weapon";
     public static string LAYER_BULLET = "Bullet";
+    public static string LAYER_SPAWNPOINT = "SpawnPoint";
+    public static string LAYER_ITEM = "Item";
+    public static string LAYER_ENEMYATTACK = "EnemyAttack";
+    public static string LAYER_PLAYERATTACK = "PlayerAttack";
 
     #endregion
 
@@ -37,6 +41,7 @@ public static class GlobalData
     public static string TAG_GROUND = "Ground";
     public static string TAG_WALL = "Wall";
     public static string TAG_ITEM = "Item";
+    public static string TAG_ENEMY = "Enemy";
 
     #endregion
 
@@ -44,7 +49,7 @@ public static class GlobalData
     // 애니메이터 파라미터명 및 태그 변수로 할당
     #region [ Animator ]
 
-    public const string TRIGGER_ATTACK_NONE = "AttackNormal";
+    public const string TRIGGER_ATTACK_HAND = "AttackNormal";
     public const string TRIGGER_ATTACK_SPEAR = "AttackSpear";
     public const string TRIGGER_ATTACK_BOW = "AttackBow";
     public const string TRIGGER_ATTACK_THROW = "AttackThrow";
@@ -55,6 +60,23 @@ public static class GlobalData
 
     public static string ANIMATOR_PARAM_MOVE = "Move";
     public static string ANIMATOR_TAG_ATTACK = "Attack";
+
+    public static string GetAttackTrigger(WeaponType weaponType)
+    {
+        switch (weaponType)
+        {
+            case WeaponType.HAND:
+                return TRIGGER_ATTACK_HAND;
+            case WeaponType.BOW:
+                return TRIGGER_ATTACK_BOW;
+            case WeaponType.SPEAR:
+                return TRIGGER_ATTACK_SPEAR;
+            case WeaponType.THROW:
+                return TRIGGER_ATTACK_THROW;
+            default:
+                return TRIGGER_ATTACK_HAND;
+        }
+    }
 
     #endregion
 
@@ -85,7 +107,7 @@ public enum CharacterType
 // 무기 타입
 public enum WeaponType
 {
-    NONE = 0,
+    HAND = 0,
     SPEAR,
     BOW,
     THROW
@@ -101,3 +123,19 @@ public enum ItemType
     WEAPON_THROW
 }
 
+
+// 적 타입
+public enum EnemyType
+{
+    NATIVECHASER
+}
+
+
+// 적 상태
+public enum EnemyState
+{
+    NONE = 0,
+    TRACKING,
+    ATTACK,
+    DIE
+}

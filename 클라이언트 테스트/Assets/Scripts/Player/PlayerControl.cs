@@ -47,7 +47,7 @@ public class PlayerControl : MonoBehaviour
         // 하위 컴포넌트들 초기화
         playerTransform.InitTransform(characterData);
         playerAnimator.InitAnimator();
-        playerAttack.InitWeapon(characterData.power);
+        playerAttack.InitAttack(characterData.power);
 
         playerState.currentHealth = characterData.health;
         playerState.isAttacking = false;

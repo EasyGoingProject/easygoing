@@ -22,6 +22,8 @@ public class PlayerTransform : MonoBehaviour
     private CharacterData characterData;
 
 
+    #region [ Init ]
+
     // 컴포넌트 초기화
     public void InitTransform(CharacterData _characterData)
     {
@@ -31,6 +33,11 @@ public class PlayerTransform : MonoBehaviour
 
         isInit = true;
     }
+
+    #endregion
+
+
+    #region [ Update ]
 
     // 플레이어 이동 정보 업데이트
     public void UpdateTransform()
@@ -61,6 +68,7 @@ public class PlayerTransform : MonoBehaviour
         }
     }
 
+    #endregion
 
 
     #region [ Jump ]

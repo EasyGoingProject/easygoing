@@ -11,19 +11,18 @@ public class PlayerAttack : MonoBehaviour
 
     // 현재 사용중인 무기의 정보
     private WeaponData currentWeaponData;
-    // 쿨타임
-    private float cooltimer = .0f;
-    // 공격가능 유무 확인 - 쿨타임파트
-    private bool canAttackCool = false;
+    
     // 공격력 배율
     private float power;
 
-
+    // 공격위치
     public Transform attackPoint;
 
 
+    #region [ Init ]
+
     // 컴포넌트 초기화
-    public void InitWeapon(float _power)
+    public void InitAttack(float _power)
     {
         power = _power;
 
@@ -34,6 +33,11 @@ public class PlayerAttack : MonoBehaviour
         InvokeRepeating("UpdateWeaponCool", 0.0f, GlobalData.TICKTOCK);
     }
 
+    #endregion
+
+
+    #region [ Weapon ]
+
     // 무기 획득
     public void GetWeapon(WeaponType _weapon)
     {
@@ -43,6 +47,19 @@ public class PlayerAttack : MonoBehaviour
         cooltimer = .0f;
     }
 
+    // 현재 무기의 타입 확인
+    public WeaponType GetWeaponType() { return currentWeaponData.weaponType; }
+
+    #endregion
+
+
+    #region [ Update ]
+
+    // 쿨타임
+    private float cooltimer = .0f;
+    // 공격가능 유무 확인 - 쿨타임파트
+    private bool canAttackCool = false;
+
     // 쿨타입 업데이트
     private void UpdateWeaponCool()
     {
@@ -50,6 +67,11 @@ public class PlayerAttack : MonoBehaviour
         // 쿨타임이 됐는지 확인
         canAttackCool = cooltimer > currentWeaponData.cooltime;
     }
+
+    #endregion
+
+
+    #region [ Attack ]
 
     // 공격처리
     public IEnumerator Attack()
@@ -81,8 +103,8 @@ public class PlayerAttack : MonoBehaviour
     {
         get { return canAttackCool; }
     }
-    // 현재 무기의 타입 확인
-    public WeaponType GetWeaponType() { return currentWeaponData.weaponType; }
+
+    #endregion
 }
 
 

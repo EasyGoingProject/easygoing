@@ -1,0 +1,298 @@
+//-----------------설정-----------------
+
+[ 전역변수 ]
+GlobalData
+	- 자주 사용되는 변수를 입력해둠
+	- 파트별
+	System
+		-> 시스템적인 부분을 변수로 선언
+	Scene
+		-> 씬명을 변수로 선언
+	Layer
+		-> 사용되는 레이어들을 변수로 선언
+	Tag
+		-> 사용되는 태그를 변수로 선언
+	Animator
+		-> 애니메이터에 사용되는 트리거, 파라미터명을 변수로 선언
+	Button
+		-> 사용되는 버튼명을 변수로 선언
+
+하단 Enum들
+	CharacterType
+		-> 플레이 가능한 캐릭터들의 타입 선언
+	WeaponType
+		-> 무기 타입 선언
+	ItemType
+		-> 아이템 타입 선언
+	EnemyType
+		-> 몬스터 타입 선언
+	EnemyState
+		-> 몬스터의 상태타입 선언
+
+
+
+
+
+//-----------------매니저-----------------
+
+GameManager
+	- 게임 시스템적인 부분 설정
+	PhysicsLayerSetting
+		-> 게임내 물리처리 부분 설정
+
+InputControl
+	- 유저가 플레이 중인 플레이어를 이동 시킬 움직임 값들을 받아오는 부분
+	- 현재 X, Y축의 움직임 및 움직임 유무 확인
+
+SpawnPoint
+	- 플레이어들이 생성될 스포닝 포인트를 지정
+	- 필드 내의 다양한 색의 기둥들에 입력되어 있음
+
+
+
+
+
+//-----------------매니저-----------------
+
+UIManager
+	- 파트별
+	Player Info
+		-> 플레이어 접속시 좌측 상단에 유저정보를 출력
+	HUD
+		-> GetHUDTextPrefab : 생성시킬 HUD텍스트의 프리팹
+		-> GetHUDRootTransform : 생성된 HUD텍스트가 부착될 위치
+
+PlayerInfo
+	- 접속한 플레이어의 정보를 출력할 UI
+	- 플레이어의 캐릭터 텍스쳐출력
+	- 플레이어의 이름 출력
+	- 플레이어의 체력 출력
+	
+
+
+
+
+//-----------------플레이어-----------------
+
+[ 필드상의 플레이어 구조 ]
+PlayerControl
+	- 플레이어 컨트롤러
+	-> Awake
+			: 가장 먼저 실행되는 유니티 내부함수
+			  캐릭터 데이터베이스에서 캐릭터 정보를 가져옴
+			  같은 오브젝트 상의 PlayerTransform, PlayerAnimator, PlayerAttack을 가져와서 할당
+	-> Init 
+			: PlayerTransform, PlayerAnimator, PlayerAttack 초기화
+			  playerState를 초기화
+			  UI에 PlayerInfo를 추가
+	-> Update
+			: 플레이어의 정보를 매프레임 갱신
+			  상황에 맞게 PlayerTransform, PlayerAnimator, PlayerAttack를 갱신
+	-> LossHealth
+			: 피격시 플레이어 체력을 줄임
+	-> Die
+			: 플레이어 사망처리
+
+PlayerState
+	- 플레이어 현재 상태 구조체
+	- 생존 유무, 공격중인지, 현재 체력
+
+PlayerTransform
+	- 플레이어의 이동, 회전 상태
+	- 파트별
+	Init
+		-> InitTransform : 초기화
+	Update
+		-> UpdateTransform : 플레이어 이동, 회전
+	Jump
+		-> InitJumpRay : 점프 초기화
+		-> IsGround : 점프 가능 상태 확인
+		-> Jump : 플레이어 점프
+
+PlayerAnimator
+	- 플레이어 애니메이터 설정, 애니메이션 플레이
+	- 파트별
+	Init
+		-> InitAnimator : 애니메이터 설정 초기화
+	Update
+		-> UpdateAnimator : 애니메이터 상태 업데이트
+		-> IsAttacking : 공격 애니메이션 중인지 확인
+	Animate
+		-> AttackAnimation : 공격 애니메이션 재생
+							 공격 타입에 따른 다른 애니메이션 재생
+		-> JumpAnimation : 점프 애니메이션 재생
+		-> DieAnimation : 사망 애니메이션 재생
+
+PlayerAttack
+	- 플레이어의 공격 상태 처리
+	- 파트별
+	Init
+		-> InitWeapon : 공격 초기화
+	Weapon
+		-> GetWeapon : 무기 획득시 사용중인 무기 상태 교체
+		-> GetWeaponType : 현재 무기 상태 타입 반환
+	Update
+		-> UpdateWeaponCool : 현재 쿨타임 상태 갱신
+	Attack
+		-> Attack : 공격처리, delay 후 공격 오브젝트 생성
+		-> ResetAttack : 공격 이후 쿨타임 초기화
+		-> CanAttack : 공격 가능 유무 확인
+
+
+
+
+
+[ 필드상의 플레이어의 공격 ]
+PlayerAttackObject
+	- 플레이어가 공격시 생성되는 공격오브젝트의 컨트롤러
+	-> SetAttack 
+			: 공격 상세 데이터 설정
+			  유지시간, 속도, 파워, 공격의 이동가능 유무 지정
+    -> Update 
+			: 유지시간 이후 파괴처리, 이동처리
+	-> OnCollisionEnter
+			: 다른 오브젝트의 콜라이더가 닿았을 때의 처리
+	-> Dispose
+			: 공격 오브젝트의 파괴처리
+
+
+
+
+
+//-----------------캐릭터-----------------
+
+[ 캐릭터의 구조와 데이터베이스 ]
+CharacterData
+	- 캐릭터 설정 구조체
+	- 캐릭터명, 캐릭터타입, 
+	  이동속도, 회전속도, 파워, 체력, 
+	  캐릭터 얼굴 텍스쳐
+
+CharacterDatabase
+	- 캐릭터 설정 구조체의 데이터베이스
+	- ScriptableObject을 사용하여 TextAsset 파일을 생성 가능
+	- 생성된 파일은 현재 Data/CharacterDB로 저장 되어 있음
+	- Get(CharacterType)을 이용하여 데이터베이스 내의 데이터를 반환가능
+
+
+
+
+//-----------------몬스터-----------------
+
+[ 몬스터 구조와 데이터베이스 ]
+EnemyData
+	- 몬스터 설정 구조체
+	- 몬스터타입, 사용무기타입, 이동속도, 회전속도,
+	  사정거리, 데미지, 체력, 쿨타임 지정 가능
+	- 공격시 생성될 오브젝트 설정
+	  -> attackActiveDelay : 공격 애니메이션 재생 후 언제 생성될 지
+	  -> attackActiveduration : 공격 오브젝트 유지 시간
+	  -> attackObjectSpeed : 발사체인 경우 속도 지정
+	  : 몬스터가 근거리 공격시 delay 이후 공격생성 위치에 오브젝트를 생성시켜 공격하고
+		duration 이후 공격 오브젝트는 삭제 됨
+		(생성된 공격 오브젝트의 콜라이더와 플레이어가 닿을 경우 피격으로 처리 됨)
+		몬스터가 원거리 공격시 delay 이후 공격생성 위치에서 오브젝트가 발사됨
+
+EnemyDatabase
+	- 몬스터 설정 구조체의 데이터베이스
+	- ScriptableObject을 사용하여 TextAsset 파일을 생성 가능
+	- 생성된 파일은 현재 Data/EnemyDB로 저장 되어 있음
+	- Get(EnemyType)을 이용하여 데이터베이스 내의 데이터를 반환가능
+
+
+
+
+
+[ 필드상의 몬스터 구조 ]
+EnemyControl
+	- 몬스터 컨트롤러
+	- Init : 시작시 몬스터 기본 설정 입력
+	- 파트별
+	EnemyData 
+		-> InitEnemyData : EnemyDatabase에서 몬스터 기본 설정값 로딩
+	Health
+		-> InitLife : EnemyDatabase에서 받아 온 값을 기준으로 현재 체력 입력
+		-> LossHealth : 몬스터 체력 닳는 부분
+		-> Die : 사망처리
+	Tracking Player
+		-> InitNavMesh : NevMesh 초기화, 타겟 지정
+		-> UpdateTrackingPlayer : 지속적으로 NevMesh의 목적지를 갱신, 타겟과의 거리 측정
+	Rotation
+		-> UpdateRotation : 이동 가능할 때 타겟 방향으로 방향회전
+	Attack
+		-> UPdateAttackTimer : 공격 가능 유무 체크 후 쿨타임 업데이트
+		-> Attack : 공격
+	Animator
+		-> UpdateAnimator : 공격모션 중인지 체크 및 걷는 모션 수치 지정
+		-> DieAnimation : 사망 애니메이션 재생
+	Global
+		-> CanMove : 현재 움직일 수 있는 상황인지 파악
+	HUD Text (몬스터 상단의 체력바 UI)
+		-> InitHUDText : HUD Text 생성
+		-> UpdateHUDText : 체력바 갱신
+
+
+
+
+
+[ 몬스터의 공격 ]
+EnemyAttackObject
+	- 몬스터가 공격시 생성되는 공격 오브젝트
+	- 근접공격시는 isNonMove 처리 되어 생성된 위치에서 duration 동안 대기 후 사라짐
+	- 원거리공격시는 speed만큼 날아가다가 duration 이후 사라짐
+	- 오브젝트의 콜라이더에 플레이어가 닿을 경우 Player의 피가 닳음
+
+
+
+
+
+//-----------------무기-----------------
+
+[ 무기 구조와 데이터베이스 ]
+WeaponData
+	- 무기 설정 구조체
+	- 무기명, 무기 타입, 공격력, 쿨타임
+	- 공격시 생성될 오브젝트 설정
+	  -> attackActiveDelay : 공격 애니메이션 재생 후 언제 생성될 지
+	  -> attackActiveduration : 공격 오브젝트 유지 시간
+	  -> attackObjectSpeed : 발사체인 경우 속도 지정
+	  : 플레이어가 근거리 공격시 delay 이후 공격생성 위치에 오브젝트를 생성시켜 공격하고
+		duration 이후 공격 오브젝트는 삭제 됨
+		(생성된 공격 오브젝트의 콜라이더와 다른 플레이어 또는 몬스터가 닿을 경우 피격으로 처리 됨)
+		플레이어가 원거리 공격시 delay 이후 공격생성 위치에서 오브젝트가 발사됨
+		
+WeaponDatabase
+	- 아이템 설정 구조체의 데이터베이스
+	- ScriptableObject을 사용하여 TextAsset 파일을 생성 가능
+	- 생성된 파일은 현재 Data/WeaponDB로 저장 되어 있음
+	- Get(WeaponType)을 이용하여 데이터베이스 내의 데이터를 반환가능
+	
+
+
+
+
+//-----------------아이템-----------------
+
+[ 아이템 구조와 데이터베이스 ]
+아이템은 현재 작업이 덜 된 부분입니다.
+ItemData
+	- 아이템 설정 구조체
+	- 아이템명, 아이템 타입 지정
+
+ItemDatabase
+	- 아이템 설정 구조체의 데이터베이스
+	- ScriptableObject을 사용하여 TextAsset 파일을 생성 가능
+	- 생성된 파일은 현재 Data/ItemDB로 저장 되어 있음
+	- Get(ItemType)을 이용하여 데이터베이스 내의 데이터를 반환가능
+
+
+
+
+
+[ 필드상의 아이템 구조 ]
+Item
+	- 아이템 컨트롤러
+
+
+
+

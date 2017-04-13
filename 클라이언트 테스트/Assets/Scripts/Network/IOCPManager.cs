@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 using System;
+using System.IO;
 using System.Collections;
 using System.Runtime.InteropServices;
-using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Net.Sockets;
 using System.Threading;
@@ -13,122 +13,133 @@ public class IOCPManager : Singleton<IOCPManager>
     private NetworkData networkData;
     private string serverAddress = "127.0.0.1";
     private int serverPort = 2738;
+    private Socket serverSocket;
 
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void DebugDelegate(string str);
+    public static bool isConnected = false;
+    public static int senderId = 0;
 
-    DebugDelegate callback_delegate;
-    IntPtr intptr_delegate;
-
-    [DllImport("IOCPEchoClientDLL")]
-    public static extern int SetDebug(IntPtr str);
-
-    [DllImport("IOCPEchoClientDLL")]
-    public static extern int SetServer(string address, string port);
-
-    [DllImport("IOCPEchoClientDLL")]
-    public static extern int ClientSendMessage(string message);
-
-    [DllImport("IOCPEchoClientDLL")]
-    public static extern int StartReceiveMessage();
-
-    [DllImport("IOCPEchoClientDLL")]
-    public static extern int StartClient();
-
-    [DllImport("IOCPEchoClientDLL")]
-    public static extern int StopClient();
-
-    public bool isConnected = false;
-
-    static void CallBackDebug(string str)
+    private void Start()
     {
-        Debug.Log("IOCP : " + str);
-    }
-
-    void Start()
-    {
-        networkData = new NetworkData();
-
-        callback_delegate = new DebugDelegate(CallBackDebug);
-        intptr_delegate = Marshal.GetFunctionPointerForDelegate(callback_delegate);
-
-        Debug.Log("Step 1 : C Library Debugging");
-        SetDebug(intptr_delegate);
-
-        Debug.Log("Step 2 : IOCP Server Connection Setting");
-        SetServer(serverAddress, serverPort.ToString());
-
-        Debug.Log("Step 3 : Join Server");
-        StartClient();
-
-        isConnected = true;
-
-        ThreadPool.QueueUserWorkItem(new WaitCallback(HandleConnetion));
-        //BinaryFormatter bf = new BinaryFormatter();
-        //Test_Packet packet = (Test_Packet)bf.Deserialize(Packet_Deserialize(data));
+        Connect();
     }
 
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.A))
-            ClientSendMessage("Left");
+            SendToServerMessage("Left");
+        else if(Input.GetKeyDown(KeyCode.W))
+            SendToServerMessage("Up");
+        else if (Input.GetKeyDown(KeyCode.D))
+            SendToServerMessage("Right");
+        else if (Input.GetKeyDown(KeyCode.S))
+            SendToServerMessage("Down");
     }
 
-
-    private void OnApplicationQuit()
-    {
-        Debug.Log(StopClient());
-    }
-
-
-    private void HandleConnetion(object x)
+    public void Connect()
     {
         try
         {
-            while (isConnected)
-            {
-                //byte[] sizeInfo = new byte[4];
+            //Security.PrefetchSocketPolicy(serverAddress, serverPort);
+            serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            serverSocket.Connect(new IPEndPoint(IPAddress.Parse(serverAddress), serverPort));
 
-                //int bytesRead = 0, currentRead = 0;
+            ClientConnection serv = new ClientConnection(serverSocket);
 
-                //currentRead = bytesRead = sSock.Receive(sizeInfo);
-
-                //while (bytesRead < sizeInfo.Length && currentRead > 0)
-                //{
-                //    currentRead = sSock.Receive(sizeInfo, bytesRead, sizeInfo.Length - bytesRead, SocketFlags.None);
-                //    bytesRead += currentRead;
-                //}
-
-                //int messageSize = BitConverter.ToInt32(sizeInfo, 0);
-                //byte[] incMessage = new byte[messageSize];
-
-                //bytesRead = 0;
-                //currentRead = bytesRead = sSock.Receive(incMessage, bytesRead, incMessage.Length - bytesRead, SocketFlags.None);
-
-                //while (bytesRead < messageSize && currentRead > 0)
-                //{
-                //    currentRead = sSock.Receive(incMessage, bytesRead, incMessage.Length - bytesRead, SocketFlags.None);
-                //    bytesRead += currentRead;
-                //}
-
-                try
-                {
-                    //Debug.Log(incMessage);
-                    //message incMes = (message)conversionTools.convertBytesToOjbect(incMessage);
-                }
-                catch (Exception e)
-                {
-                    Debug.Log("Server message getted failed. " + e.Message);
-                }
-            }
+            isConnected = true;
         }
-        catch
+        catch (Exception e)
         {
-            Debug.Log("Server is Closed.");
+            Debug.Log(e.Message);
         }
-
-        Debug.Log("Disconnected from the server.");
-        StopClient();
     }
 
+    public void SendTransform(Vector3 position, Quaternion rotation)
+    {
+        return;
+
+        SendToServerMessage(new NetworkData(
+            senderId,
+            DataType.SYNCTRANSFORM,
+            new NetworkData.NetworkVector()
+            {
+                x = position.x,
+                y = position.y,
+                z = position.z
+            },
+            new NetworkData.NetworkQuaternion()
+            {
+                x = rotation.x,
+                y = rotation.y,
+                z = rotation.z,
+                w = rotation.w
+            }));
+    }
+
+    public void SendToServerMessage(string data)
+    {
+        if (isConnected)
+        {
+            try
+            {
+                byte[] mesObj = ConverterTools.ConvertObjectToBytes(data);
+                byte[] readyToSend = ConverterTools.WrapMessage(mesObj);
+                serverSocket.Send(readyToSend);
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.ToString());
+            }
+        }
+    }
+
+    public void SendToServerMessage(NetworkData netData)
+    {
+        if (isConnected)
+        {
+            try
+            {
+                byte[] mesObj = ConverterTools.ConvertObjectToBytes(netData);
+                byte[] readyToSend = ConverterTools.WrapMessage(mesObj);
+                serverSocket.Send(mesObj);
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e.ToString());
+            }
+        }
+    }
+
+
+    public void ReceiveMessage(NetworkData netData)
+    {
+        Debug.Log(netData.SenderId + " : " + netData.DataType + " : " + netData.Position + " : " + netData.Rotation);
+    }
+
+
+    #region [ Reset ]
+
+    #endregion
+
+
+    #region [ Disconnect ]
+
+    public void OnApplicationQuit()
+    {
+        Disconnect();
+    }
+
+    public void Disconnect()
+    {
+        try
+        {
+            serverSocket.Close();
+        }
+        catch { }
+        isConnected = false;
+    }
+
+    #endregion
+
 }
+
+

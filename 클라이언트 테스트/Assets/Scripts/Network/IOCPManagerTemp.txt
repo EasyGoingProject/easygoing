@@ -1,0 +1,83 @@
+
+
+    /*
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void DebugDelegate(string str);
+
+    DebugDelegate debug_delegate;
+    IntPtr intptr_debug;
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void MessageDelegate(string str);
+
+    MessageDelegate message_delegate;
+    IntPtr intptr_message;
+
+
+    [DllImport("IOCPEchoClientDLL")]
+    public static extern int SetDebug(IntPtr str);
+
+    [DllImport("IOCPEchoClientDLL")]
+    public static extern int SetMessage(IntPtr str);
+
+    [DllImport("IOCPEchoClientDLL")]
+    public static extern int SetServer(string address, string port);
+
+    [DllImport("IOCPEchoClientDLL")]
+    public static extern int ClientSendMessage(string message);
+
+    [DllImport("IOCPEchoClientDLL")]
+    public static extern int StartReceiveMessage();
+
+    [DllImport("IOCPEchoClientDLL")]
+    public static extern Socket StartClient();
+
+    [DllImport("IOCPEchoClientDLL")]
+    public static extern int StopClient();
+
+    public bool isConnected = false;
+
+    static void CallBackDebug(string str)
+    {
+        Debug.Log("IOCP : " + str);
+    }
+
+    static void ServerMessage(string str)
+    {
+        Debug.Log("Server Message : " + str);
+    }
+
+    void Start()
+    {
+        networkData = new NetworkData();
+
+        debug_delegate = new DebugDelegate(CallBackDebug);
+        intptr_debug = Marshal.GetFunctionPointerForDelegate(debug_delegate);
+
+        message_delegate = new MessageDelegate(ServerMessage);
+        intptr_message = Marshal.GetFunctionPointerForDelegate(message_delegate);
+
+        SetDebug(intptr_debug);
+        SetMessage(intptr_message);
+
+        SetServer(serverAddress, serverPort.ToString());
+
+        serverSocket = StartClient();
+
+        isConnected = true;
+
+        //BinaryFormatter bf = new BinaryFormatter();
+        //Test_Packet packet = (Test_Packet)bf.Deserialize(Packet_Deserialize(data));
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.A))
+            ClientSendMessage("Left");
+    }
+
+    private void OnApplicationQuit()
+    {
+        StopClient();
+    }
+    */

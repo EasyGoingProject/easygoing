@@ -3,41 +3,55 @@ using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 
+[Serializable]
 public class NetworkData
 {
-    [Serializable]
-    public struct MessageVector
+    private int senderId;
+    private DataType dataType;
+    private NetworkVector position;
+    private NetworkQuaternion rotation;
+
+    public NetworkData(int _senderID, DataType _dataType)
     {
-        int sender;
-        float x;
-        float y;
-        float z;
+        senderId = _senderID;
+        dataType = _dataType;
     }
 
-    private Byte[] PacketSerialize(MessageVector packet)
+    public NetworkData(int _senderID, DataType _dataType, NetworkVector _position, NetworkQuaternion _rotation)
     {
-        MemoryStream ms = new MemoryStream();
-        BinaryFormatter bf = new BinaryFormatter();
-        bf.Serialize(ms, packet);
-        return ms.ToArray();
+        senderId = _senderID;
+        dataType = _dataType;
+        position = _position;
+        rotation = _rotation;
     }
 
-    private MemoryStream PacketDeserialize(Byte[] data)
-    {
-        MemoryStream ms = new MemoryStream();
-        foreach (Byte wb in data)
-            ms.WriteByte(wb);
-        ms.Position = 0;
-        return ms;
-    }
+    public int SenderId { get { return senderId; } }
+    public DataType DataType { get { return dataType; } }
+    public NetworkVector Position { get { return position; } }
+    public NetworkQuaternion Rotation { get { return Rotation; } }
 
     [Serializable]
-    public struct MessageQuaternion
+    public struct NetworkVector
     {
-        int sender;
-        float x;
-        float y;
-        float z;
-        float w;
+        public float x;
+        public float y;
+        public float z;
+    }
+
+    [Serializable]
+    public struct NetworkQuaternion
+    {
+        public float x;
+        public float y;
+        public float z;
+        public float w;
     }
 }
+
+public enum DataType
+{
+    RESPONSE = 0,
+    JOIN = 1,
+    SYNCTRANSFORM = 2,
+}
+

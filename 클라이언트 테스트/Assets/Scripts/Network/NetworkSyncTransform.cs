@@ -50,9 +50,9 @@ public class NetworkSyncTransform : MonoBehaviour {
 
         if (IsPositionChanged() || IsRotationChanged())
         {
-            IOCPManager.GetInstance.SendTransform(thisTrans.position, thisTrans.rotation);
             lastPosition = thisTrans.position;
             lastRotation = thisTrans.eulerAngles;
+            IOCPManager.GetInstance.SendTransform(thisTrans.position, thisTrans.rotation);
         }
     }
 

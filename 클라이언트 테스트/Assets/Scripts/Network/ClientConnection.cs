@@ -51,13 +51,11 @@ public class ClientConnection
 
                 try
                 {
-                    Debug.Log("Receive : " + (string)ConverterTools.ConvertBytesToOjbect(incMessage));
-
+                    Debug.Log("Receive 1 : " + (ConverterTools.ConvertBytesToOjbect(incMessage)));
 
                     NetworkData incMes = (NetworkData)ConverterTools.ConvertBytesToOjbect(incMessage);
 
-                    if (incMes != null)
-                        IOCPManager.GetInstance.ReceiveMessage(incMes);
+                    IOCPManager.GetInstance.ReceiveMessage(incMes);
                 }
                 catch (Exception e)
                 {

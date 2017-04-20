@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 
 public class ConverterTools
@@ -20,6 +21,29 @@ public class ConverterTools
         BinaryFormatter binForm = new BinaryFormatter();
         binForm.Serialize(memStream, o);
         return memStream.ToArray();
+    }
+
+    public static byte[] StructToBytes(object o)
+    {
+        int datasize = Marshal.SizeOf(o);
+        IntPtr buff = Marshal.AllocHGlobal(datasize);
+        Marshal.StructureToPtr(o, buff, false);
+        byte[] data = new byte[datasize];
+        Marshal.Copy(buff, data, 0, datasize);
+        Marshal.FreeHGlobal(buff);
+        return data;
+    }
+
+    public static object BytesToStruct(byte[] data, Type type)
+    {
+        IntPtr buff = Marshal.AllocHGlobal(data.Length);
+        Marshal.Copy(data, 0, buff, data.Length);
+        object obj = Marshal.PtrToStructure(buff, type);
+        Marshal.FreeHGlobal(buff);
+
+        if (Marshal.SizeOf(obj) != data.Length)
+            return null;
+        return obj;
     }
 
     public static byte[] ConvertObjectToBytesForIOS(object o)

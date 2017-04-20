@@ -10,7 +10,6 @@ using System.Net;
 
 public class IOCPManager : Singleton<IOCPManager>
 {
-    private NetworkData networkData;
     private string serverAddress = "127.0.0.1";
     private int serverPort = 2738;
     private Socket serverSocket;
@@ -18,24 +17,21 @@ public class IOCPManager : Singleton<IOCPManager>
     public static bool isConnected = false;
     public static int senderId = 0;
 
+    public UILabel lbServerMessage;
+
+    public UIButton btnServerConnect;
+
     private void Start()
     {
-        Connect();
+        EventDelegate.Add(btnServerConnect.onClick, ConnectClick);
     }
 
-    private void Update()
+    public void ConnectClick()
     {
-        if (Input.GetKeyDown(KeyCode.A))
-            SendToServerMessage("Left");
-        else if(Input.GetKeyDown(KeyCode.W))
-            SendToServerMessage("Up");
-        else if (Input.GetKeyDown(KeyCode.D))
-            SendToServerMessage("Right");
-        else if (Input.GetKeyDown(KeyCode.S))
-            SendToServerMessage("Down");
+        StartCoroutine(Connect());
     }
 
-    public void Connect()
+    public IEnumerator Connect()
     {
         try
         {
@@ -44,52 +40,83 @@ public class IOCPManager : Singleton<IOCPManager>
             serverSocket.Connect(new IPEndPoint(IPAddress.Parse(serverAddress), serverPort));
 
             ClientConnection serv = new ClientConnection(serverSocket);
-
-            isConnected = true;
         }
         catch (Exception e)
         {
             Debug.Log(e.Message);
         }
+
+        while (!serverSocket.Connected)
+            yield return null;
+
+        isConnected = true;
+
+        btnServerConnect.gameObject.SetActive(false);
+
+        SendJoin(senderId);
     }
 
-    public void SendTransform(Vector3 position, Quaternion rotation)
+    private void Update()
     {
-        return;
-
-        SendToServerMessage(new NetworkData(
-            senderId,
-            DataType.SYNCTRANSFORM,
-            new NetworkData.NetworkVector()
-            {
-                x = position.x,
-                y = position.y,
-                z = position.z
-            },
-            new NetworkData.NetworkQuaternion()
-            {
-                x = rotation.x,
-                y = rotation.y,
-                z = rotation.z,
-                w = rotation.w
-            }));
+        if(Input.GetKeyDown(KeyCode.W))
+            SendString("UP");
+        if (Input.GetKeyDown(KeyCode.A))
+            SendString("LEFT");
+        if (Input.GetKeyDown(KeyCode.D))
+            SendString("RIGHT");
+        if (Input.GetKeyDown(KeyCode.S))
+            SendString("DOWN");
     }
 
-    public void SendToServerMessage(string data)
+
+    #region [ Send Message ]
+
+    public void SendJoin(int _senderID)
     {
-        if (isConnected)
+        NetworkData sendData = new NetworkData()
         {
-            try
-            {
-                byte[] mesObj = ConverterTools.ConvertObjectToBytes(data);
-                byte[] readyToSend = ConverterTools.WrapMessage(mesObj);
-                serverSocket.Send(readyToSend);
-            }
-            catch (Exception e)
-            {
-                Debug.Log(e.ToString());
-            }
-        }
+            senderId = _senderID,
+            dataType = DataType.JOIN
+        };
+        SendToServerMessage(sendData);
+    }
+
+    public void SendString(string _dataString)
+    {
+        NetworkData sendData = new NetworkData()
+        {
+            senderId = senderId,
+            dataType = DataType.MESSAGE,
+            message = _dataString
+        };
+        SendToServerMessage(sendData);
+    }
+
+    public void SendTransform(Vector3 syncPosition, Quaternion syncRotation)
+    {
+        NetworkVector networkPosition = new NetworkVector()
+        {
+            x = syncPosition.x,
+            y = syncPosition.y,
+            z = syncPosition.z,
+        };
+        NetworkQuaternion networkRotation = new NetworkQuaternion()
+        {
+            x = syncRotation.x,
+            y = syncRotation.y,
+            z = syncRotation.z,
+            w = syncRotation.w
+        };
+
+        NetworkData sendData = new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            dataType = DataType.SYNCTRANSFORM,
+            position = networkPosition,
+            rotation = networkRotation
+        };
+
+        //SendToServerMessage(sendData);
     }
 
     public void SendToServerMessage(NetworkData netData)
@@ -100,7 +127,8 @@ public class IOCPManager : Singleton<IOCPManager>
             {
                 byte[] mesObj = ConverterTools.ConvertObjectToBytes(netData);
                 byte[] readyToSend = ConverterTools.WrapMessage(mesObj);
-                serverSocket.Send(mesObj);
+
+                serverSocket.Send(readyToSend);
             }
             catch (Exception e)
             {
@@ -109,11 +137,18 @@ public class IOCPManager : Singleton<IOCPManager>
         }
     }
 
+    #endregion
+
+
+    #region [ Receive Message ]
 
     public void ReceiveMessage(NetworkData netData)
     {
-        Debug.Log(netData.SenderId + " : " + netData.DataType + " : " + netData.Position + " : " + netData.Rotation);
+        //lbServerMessage.text += string.Concat(netData.senderId, " : ", netData.dataType, "\n");
+        Debug.Log("Sender : " + netData.senderId + " : " + netData.dataType + " : " + netData.message);
     }
+
+    #endregion
 
 
     #region [ Reset ]

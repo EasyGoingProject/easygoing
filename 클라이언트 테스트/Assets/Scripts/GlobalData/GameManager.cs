@@ -5,6 +5,8 @@ public class GameManager : Singleton<GameManager>
 {
     private void Awake()
     {
+        Application.runInBackground = true;
+
         PhysicsLayerSetting();
     }
 

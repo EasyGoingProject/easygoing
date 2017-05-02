@@ -12,7 +12,7 @@ void ListInit(CLIENT_LIST * list)
 {
 	list->size = 0;
 	list->cursor = 0;
-	printf("클라이언트 리스트 초기화\n");
+	printf("Init Client List\n");
 }
 
 BOOL AddToClientList(CLIENT_DATA connection, CLIENT_LIST * list)
@@ -20,7 +20,7 @@ BOOL AddToClientList(CLIENT_DATA connection, CLIENT_LIST * list)
 	int i = 0;
 	if (IsClientFull(list) == 1)
 	{
-		printf("최대인원\n");
+		printf("Max Clients\n");
 		return FALSE;
 	}
 	else {
@@ -33,9 +33,24 @@ BOOL AddToClientList(CLIENT_DATA connection, CLIENT_LIST * list)
 		list->connectionList[list->cursor] = connection;
 		//클라이언트 수 증가
 		list->size++;
+		printf("Added Client\n");
 	}
 
 	return TRUE;
+}
+
+void SetClient(CLIENT_LIST * list, int clientNumber, char *clientName, char *characterNum) {
+
+	for (int i = 0; i < list->size; i++) {
+
+		LP_CLIENT_DATA targetClient = &(list->connectionList[i]);
+		if (targetClient->clientNum == clientNumber) {
+
+			memcpy(targetClient->clientName, clientName, 20);
+			memcpy(targetClient->characterNum, characterNum, 3);
+			break;
+		}
+	}
 }
 
 BOOL RemoveAtClientList(CLIENT_LIST * list)
@@ -44,7 +59,7 @@ BOOL RemoveAtClientList(CLIENT_LIST * list)
 
 	if (IsClientEmpty(list) == 1)
 	{
-		printf("클라이언트가 없습니다\n");
+		printf("No Client\n");
 		return FALSE;
 	}
 	//마지막 값일때는 한개 삭제 : 외의 수치값들 조정할 필요 없음

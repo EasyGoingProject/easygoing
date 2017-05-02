@@ -19,3 +19,5 @@ MonoBehaviour:
     power: 1
     health: 100
     texCharacter: {fileID: 2800000, guid: 849e859ad6cd26d40b87b54b67a58538, type: 3}
+    charaterPrefab: {fileID: 1000013321844564, guid: dab4d2287c8b19d48b09d8ee6a032324,
+      type: 2}

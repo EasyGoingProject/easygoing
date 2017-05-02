@@ -33,4 +33,6 @@ public class EnemyData
     public float attackActiveDuration;
     // 공격 오브젝트 속도
     public float attackObjectSpeed;
+    // 적 프리팹
+    public GameObject enemyPrefab;
 }

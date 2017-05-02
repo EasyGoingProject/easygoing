@@ -15,14 +15,17 @@ public class PlayerControl : MonoBehaviour
     private CharacterData characterData;
 
     public PlayerState playerState;
-
+    public ClientData clientData;
     
     // 하위 플레이어 컴포넌트들
     private PlayerTransform playerTransform;
     private PlayerAnimator playerAnimator;
     private PlayerAttack playerAttack;
-
     private PlayerInfo playerInfo;
+    [HideInInspector]
+    public NetworkSyncTransform netSyncTrans;
+    [HideInInspector]
+    public NetworkSyncAnimator netSyncAnimator;
 
 
     void Awake()
@@ -34,16 +37,15 @@ public class PlayerControl : MonoBehaviour
         playerTransform = GetComponent<PlayerTransform>();
         playerAnimator = GetComponent<PlayerAnimator>();
         playerAttack = GetComponent<PlayerAttack>();
+        netSyncTrans = GetComponent<NetworkSyncTransform>();
+        netSyncAnimator = GetComponent<NetworkSyncAnimator>();
         // ----- //
     }
 
-    void Start()
+    public void InitCharacter(ClientData _clientData)
     {
-        Init();
-    }
+        clientData = _clientData;
 
-    private void Init()
-    {
         // 하위 컴포넌트들 초기화
         playerTransform.InitTransform(characterData);
         playerAnimator.InitAnimator();
@@ -53,13 +55,20 @@ public class PlayerControl : MonoBehaviour
         playerState.isAttacking = false;
         playerState.isLive = true;
 
-        playerInfo = UIManager.GetInstance.AddPlayerInfo(characterData);
+        playerInfo = UIManager.GetInstance.AddPlayerInfo(characterData, _clientData);
+
+        netSyncTrans.isLocalPlayer = clientData.isLocalPlayer;
+        netSyncAnimator.Init(playerAnimator.GetAnimator(), clientData.clientNumber, clientData.isLocalPlayer);
+
+        //gameObject.layer = clientData.isLocalPlayer ? LayerMask.NameToLayer(GlobalData.LAYER_PLAYER) : LayerMask.NameToLayer(GlobalData.LAYER_ENEMY);
+        //gameObject.tag = clientData.isLocalPlayer ? GlobalData.TAG_PLAYER : GlobalData.TAG_ENEMY;
+
         // ----- //
     }
 
     void Update()
     {
-        if (!playerState.isLive)
+        if (!playerState.isLive || !clientData.isLocalPlayer)
             return;
 
         // 공격 가능시
@@ -70,6 +79,7 @@ public class PlayerControl : MonoBehaviour
             StartCoroutine(playerAttack.Attack());
             // 플레이어 애니메이터 컴포넌트에 공격 전달
             playerAnimator.AttackAnimation(playerAttack.GetWeaponType());
+            netSyncAnimator.AttackAnimation(playerAttack.GetWeaponType());
         }
 
         // 점프 가능시
@@ -80,6 +90,7 @@ public class PlayerControl : MonoBehaviour
             playerTransform.Jump();
             // 플레이어 애니메이터 컴포넌트에 점프 전달
             playerAnimator.JumpAnimation();
+            netSyncAnimator.JumpAnimation();
         }
 
         // 공격 중이 아닐때
@@ -99,12 +110,13 @@ public class PlayerControl : MonoBehaviour
 
         playerInfo.SetHealth(playerState.currentHealth / characterData.health);
 
-        if (!playerState.isLive)
+        if (!playerState.isLive && clientData.isLocalPlayer)
             Die();
     }
 
     private void Die()
     {
         playerAnimator.DieAnimation();
+        netSyncAnimator.DieAnimation();
     }
 }

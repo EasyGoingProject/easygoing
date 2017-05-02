@@ -1,134 +1,161 @@
-﻿using UnityEngine;
+﻿//#define DEBUGGING
+
+using UnityEngine;
 using System;
-using System.IO;
-using System.Collections;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization.Formatters.Binary;
+using System.Collections.Generic;
 using System.Net.Sockets;
-using System.Threading;
-using System.Net;
 
 public class IOCPManager : Singleton<IOCPManager>
 {
-    private string serverAddress = "127.0.0.1";
-    private int serverPort = 2738;
-    private Socket serverSocket;
-
-    public static bool isConnected = false;
-    public static int senderId = 0;
-
-    public UILabel lbServerMessage;
-
-    public UIButton btnServerConnect;
+    public GameManager gameManager;
 
     private void Start()
+    {
+        InitPrefabData();
+        InitConnect();
+    }
+
+
+    #region [ Data ]
+
+    [Header("[ Data ]")]
+    public UILabel lbServerIp;
+    public UIInput inputServerIP;
+
+    public UILabel lbServerPort;
+    public UIInput inputServerPort;
+
+    public UILabel lbUserName;
+    public UIInput inputUserName;
+
+    private const string PrefabDataIP = "ServerIP";
+    private const string PrefabDataPort = "ServerPort";
+    private const string PrefabDataPlayerName = "PlayerName";
+
+    private const string DefaultPlayerName = "UnknownPlayer";
+
+    private void InitPrefabData()
+    {
+        if (!PlayerPrefs.HasKey(PrefabDataIP))
+            PlayerPrefs.SetString(PrefabDataIP, serverAddress);
+
+        if (!PlayerPrefs.HasKey(PrefabDataPort))
+            PlayerPrefs.SetString(PrefabDataPort, serverPort.ToString());
+
+        if (!PlayerPrefs.HasKey(PrefabDataPlayerName))
+            PlayerPrefs.SetString(PrefabDataPlayerName, DefaultPlayerName);
+
+        LoadPrefabData();
+    }
+
+    private void LoadPrefabData()
+    {
+        serverAddress = PlayerPrefs.GetString(PrefabDataIP);
+        serverPort = int.Parse(PlayerPrefs.GetString(PrefabDataPort));
+        playerName = PlayerPrefs.GetString(PrefabDataPlayerName);
+
+        lbServerIp.text = inputServerIP.value = serverAddress;
+        lbServerPort.text = inputServerPort.value = serverPort.ToString();
+        lbUserName.text = inputUserName.value = playerName;
+    }
+
+    private void SavePrefabData()
+    {
+        serverAddress = inputServerIP.value;
+        serverPort = int.Parse(inputServerPort.value);
+        playerName = inputUserName.value;
+
+        PlayerPrefs.SetString(PrefabDataIP, serverAddress);
+        PlayerPrefs.SetString(PrefabDataPort, serverPort.ToString());
+        PlayerPrefs.SetString(PrefabDataPlayerName, playerName);
+    }
+
+    #endregion
+
+
+    #region [ Connect ]
+
+    [Header("[ Connect ]")]
+    public string serverAddress = "127.0.0.1";
+    public int serverPort = 2738;
+    public string playerName = "UnknownPlayer";
+    public int characterIndex = 0;
+    public static ClientData connectionData;
+
+    public static int senderId = -1;
+
+    public TCPClient client;
+
+    public GameObject panelServerConnect;
+    public UIButton btnServerConnect;
+
+    private string[] receiveSplit;
+
+    private void InitConnect()
     {
         EventDelegate.Add(btnServerConnect.onClick, ConnectClick);
     }
 
-    public void ConnectClick()
+    private void ResetConnect()
     {
-        StartCoroutine(Connect());
+        senderId = -1;
     }
 
-    public IEnumerator Connect()
+    public void ConnectClick()
     {
+        SavePrefabData();
+        Connect();
+    }
+
+    public void Connect()
+    {
+        ResetConnect();
+        ResetClientDataList();
+
         try
         {
-            //Security.PrefetchSocketPolicy(serverAddress, serverPort);
-            serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            serverSocket.Connect(new IPEndPoint(IPAddress.Parse(serverAddress), serverPort));
-
-            ClientConnection serv = new ClientConnection(serverSocket);
+            client.StartConnect(this);
+            panelServerConnect.SetActive(false);
         }
         catch (Exception e)
         {
             Debug.Log(e.Message);
         }
-
-        while (!serverSocket.Connected)
-            yield return null;
-
-        isConnected = true;
-
-        btnServerConnect.gameObject.SetActive(false);
-
-        SendJoin(senderId);
     }
 
-    private void Update()
-    {
-        if(Input.GetKeyDown(KeyCode.W))
-            SendString("UP");
-        if (Input.GetKeyDown(KeyCode.A))
-            SendString("LEFT");
-        if (Input.GetKeyDown(KeyCode.D))
-            SendString("RIGHT");
-        if (Input.GetKeyDown(KeyCode.S))
-            SendString("DOWN");
-    }
+    #endregion
 
 
     #region [ Send Message ]
 
     public void SendJoin(int _senderID)
     {
-        NetworkData sendData = new NetworkData()
+        SendToServerMessage(new NetworkData()
         {
             senderId = _senderID,
-            dataType = DataType.JOIN
-        };
-        SendToServerMessage(sendData);
+            sendType = SendType.JOIN
+        });
     }
 
     public void SendString(string _dataString)
     {
-        NetworkData sendData = new NetworkData()
+        SendToServerMessage(new NetworkData()
         {
             senderId = senderId,
-            dataType = DataType.MESSAGE,
+            sendType = SendType.MESSAGE,
             message = _dataString
-        };
-        SendToServerMessage(sendData);
-    }
-
-    public void SendTransform(Vector3 syncPosition, Quaternion syncRotation)
-    {
-        NetworkVector networkPosition = new NetworkVector()
-        {
-            x = syncPosition.x,
-            y = syncPosition.y,
-            z = syncPosition.z,
-        };
-        NetworkQuaternion networkRotation = new NetworkQuaternion()
-        {
-            x = syncRotation.x,
-            y = syncRotation.y,
-            z = syncRotation.z,
-            w = syncRotation.w
-        };
-
-        NetworkData sendData = new NetworkData()
-        {
-            senderId = IOCPManager.senderId,
-            dataType = DataType.SYNCTRANSFORM,
-            position = networkPosition,
-            rotation = networkRotation
-        };
-
-        //SendToServerMessage(sendData);
+        });
     }
 
     public void SendToServerMessage(NetworkData netData)
     {
-        if (isConnected)
+        if (client.connectState == TCPClient.ConnectionState.Connected
+            || client.connectState == TCPClient.ConnectionState.SetClient)
         {
             try
             {
                 byte[] mesObj = ConverterTools.ConvertObjectToBytes(netData);
-                byte[] readyToSend = ConverterTools.WrapMessage(mesObj);
-
-                serverSocket.Send(readyToSend);
+                client.SendData(netData);
             }
             catch (Exception e)
             {
@@ -142,39 +169,140 @@ public class IOCPManager : Singleton<IOCPManager>
 
     #region [ Receive Message ]
 
-    public void ReceiveMessage(NetworkData netData)
+    public void ReceiveData(NetworkData netData)
     {
-        //lbServerMessage.text += string.Concat(netData.senderId, " : ", netData.dataType, "\n");
-        Debug.Log("Sender : " + netData.senderId + " : " + netData.dataType + " : " + netData.message);
+        try
+        {
+            switch (netData.sendType)
+            {
+                case SendType.SYNCTRANSFORM:
+                    clientControlList[netData.senderId].netSyncTrans.SetTransform(netData.position, netData.rotation);
+                    break;
+
+                case SendType.ANIMATOR_MOVE:
+                    clientControlList[netData.senderId].netSyncAnimator.SetAnimatorMove(netData);
+                    break;
+
+                case SendType.ANIMATOR_TRIGGER:
+                    clientControlList[netData.senderId].netSyncAnimator.NetworkReceiveTrigger(netData);
+                    break;
+
+                case SendType.ATTACK:
+                    gameManager.attackDataList.Add(netData);
+                    break;
+
+                case SendType.HIT:
+                    clientControlList[netData.targetId].LossHealth(netData.power);
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Receive Error " + e.ToString());
+        }
+    }
+
+    public void ReceiveData(ServerMessageType servMesType, string innerData)
+    {
+#if DEBUGGING
+        Debug.Log("==> Server : " + servMesType + " : " + innerData);
+#endif
+
+        switch (servMesType)
+        {
+            case ServerMessageType.ClientNumber:
+                receiveSplit = innerData.Split(","[0]);
+                int clientCount = int.Parse(receiveSplit[0]);
+                senderId = int.Parse(receiveSplit[1]);
+
+                break;
+
+            case ServerMessageType.ClientList:
+                client.connectState = TCPClient.ConnectionState.Connected;
+
+                receiveSplit = innerData.Split(","[0]);
+
+                for (int i = 0; i < receiveSplit.Length - 1; i++)
+                {
+                    string[] dataSplit = receiveSplit[i].Split("="[0]);
+
+                    ClientData clientData = new ClientData()
+                    {
+                        isDie = false,
+                        isSpawned = false,
+
+                        clientIndex = int.Parse(dataSplit[0]),
+                        isHost = int.Parse(dataSplit[0]) == 0,
+                        clientNumber = int.Parse(dataSplit[1]),
+                        isLocalPlayer = int.Parse(dataSplit[1]) == senderId,
+                        clientName = dataSplit[2],
+                        characterType = (CharacterType)(int.Parse(dataSplit[3]))
+                    };
+
+                    if (clientData.isLocalPlayer)
+                        connectionData = clientData;
+
+                    AddClient(clientData);
+                }
+
+                break;
+
+            case ServerMessageType.Join:
+                break;
+        }
     }
 
     #endregion
 
 
-    #region [ Reset ]
+    #region [ Client List ]
+
+    public static List<ClientData> clientDataList = new List<ClientData>();
+    public static Dictionary<int, PlayerControl> clientControlList = new Dictionary<int, PlayerControl>();
+
+    private void ResetClientDataList()
+    {
+        clientDataList = new List<ClientData>();
+        clientControlList = new Dictionary<int, PlayerControl>();
+    }
+
+    private void AddClient(ClientData clientData)
+    {
+        if (clientDataList.Find(x => x.clientNumber == clientData.clientNumber) == null)
+        {
+#if DEBUGGING
+            Debug.Log("Add Client " + clientData.clientNumber);
+#endif
+            clientDataList.Add(clientData);
+        }
+    }
 
     #endregion
 
 
     #region [ Disconnect ]
 
-    public void OnApplicationQuit()
-    {
-        Disconnect();
-    }
-
-    public void Disconnect()
+    public void Disconnect(Socket client)
     {
         try
         {
-            serverSocket.Close();
+            client.Shutdown(SocketShutdown.Both);
+            client.Close();
         }
         catch { }
-        isConnected = false;
     }
 
     #endregion
-
 }
 
-
+public class ClientData
+{
+    public int clientNumber;
+    public CharacterType characterType;
+    public bool isSpawned = false;
+    public bool isDie = false;
+    public bool isLocalPlayer = false;
+    public bool isHost = false;
+    public int clientIndex;
+    public string clientName;
+}

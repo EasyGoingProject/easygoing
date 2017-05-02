@@ -80,6 +80,8 @@ public class PlayerAttack : MonoBehaviour
 
         yield return new WaitForSeconds(currentWeaponData.attackActiveDelay);
 
+        /* 
+        // SinglePlay
         GameObject attackObj = Instantiate(currentWeaponData.attackObject) as GameObject;
         attackObj.transform.position = attackPoint.position;
         attackObj.transform.rotation = attackPoint.rotation;
@@ -88,6 +90,27 @@ public class PlayerAttack : MonoBehaviour
             currentWeaponData.attackActiveDuration,
             currentWeaponData.attackObjectSpeed,
             currentWeaponData.damage * power);
+        */
+
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            sendType = SendType.ATTACK,
+            weaponType = currentWeaponData.weaponType,
+            position = new NetworkVector()
+            {
+                x = attackPoint.position.x,
+                y = attackPoint.position.y,
+                z = attackPoint.position.z
+            },
+            rotation = new NetworkVector()
+            {
+                x = attackPoint.eulerAngles.x,
+                y = attackPoint.eulerAngles.y,
+                z = attackPoint.eulerAngles.z
+            },
+            power = power
+        });
     }
 
     // 공격 초기화

@@ -19,10 +19,11 @@ public class UIManager : Singleton<UIManager> {
     [SerializeField]
     private PlayerInfo playerInfoPrefab;
 
-    public PlayerInfo AddPlayerInfo(CharacterData characterData)
+    public PlayerInfo AddPlayerInfo(CharacterData characterData, ClientData clientData)
     {
         PlayerInfo playerInfo = Instantiate(playerInfoPrefab, gridPlayerInfo.transform) as PlayerInfo;
         playerInfo.transform.localScale = Vector3.one;
+        playerInfo.SetPlayer(characterData, clientData);
 
         gridPlayerInfo.Reposition();
 

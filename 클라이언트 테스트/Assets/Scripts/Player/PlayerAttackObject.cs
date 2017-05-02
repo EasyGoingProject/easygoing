@@ -13,10 +13,13 @@ public class PlayerAttackObject : MonoBehaviour
 
     private float lifeTimer = 0;
 
-    public void SetAttack(float _duration, float _speed, float _damage)
+    private int createPlayerId;
+
+    public void SetAttack(int senderId, float _duration, float _speed, float _damage)
     {
         attackTrans = transform;
 
+        createPlayerId = senderId;
         duration = _duration;
         speed = _speed;
         damage = _damage;
@@ -37,17 +40,28 @@ public class PlayerAttackObject : MonoBehaviour
         attackTrans.Translate(attackTrans.forward * Time.deltaTime * speed, Space.Self);
     }
 
-    private void OnCollisionEnter(Collision col)
+    private void OnTriggerEnter(Collider other)
     {
-        if (isHit)
+        if (isHit || !IOCPManager.connectionData.isHost)
             return;
-        
-        if (col.gameObject.layer == LayerMask.NameToLayer(GlobalData.LAYER_ENEMY)
-            && col.gameObject.CompareTag(GlobalData.TAG_ENEMY))
+
+        //col.gameObject.CompareTag(GlobalData.TAG_ENEMY)
+        if (other.gameObject.CompareTag(GlobalData.TAG_PLAYER))
         {
+            PlayerControl pControl = other.gameObject.GetComponent<PlayerControl>();
+            if (pControl == null || createPlayerId == pControl.clientData.clientNumber)
+                return;
+
             isHit = true;
 
-            col.gameObject.GetComponent<EnemyControl>().LossHealth(damage);
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = IOCPManager.senderId,
+                sendType = SendType.HIT,
+                targetId = pControl.clientData.clientNumber,
+                power = damage,
+            });
+
             Dispose();
         }
     }

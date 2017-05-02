@@ -7,12 +7,16 @@ using System.Runtime.Serialization.Formatters.Binary;
 public struct NetworkData
 {
     public int senderId;
+    public int targetId;
     public CharacterType characterType;
-    public DataType dataType;
+    public SendType sendType;
     public string message;
     public float life;
+    public float power;
+    public WeaponType weaponType;
     public NetworkVector position;
-    public NetworkQuaternion rotation;
+    public NetworkVector rotation;
+    public NetworkAnimator animator;
 }
 
 [Serializable]
@@ -32,11 +36,28 @@ public struct NetworkQuaternion
     public float w;
 }
 
-public enum DataType
+[Serializable]
+public struct NetworkAnimator
+{
+    public float move;
+    public bool attackNormal;
+    public bool attackSpear;
+    public bool attackBow;
+    public bool attackThrow;
+    public bool jump;
+    public bool die;
+}
+
+public enum SendType
 {
     RESPONSE = 0,
     JOIN = 1,
     SYNCTRANSFORM = 2,
-    MESSAGE = 3
+    ANIMATOR_MOVE = 3,
+    ANIMATOR_TRIGGER = 4,
+    ATTACK = 5,
+    HIT = 6,
+    DIE = 7,
+    MESSAGE = 10
 }
 

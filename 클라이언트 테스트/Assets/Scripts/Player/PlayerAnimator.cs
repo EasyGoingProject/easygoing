@@ -21,6 +21,11 @@ public class PlayerAnimator : MonoBehaviour
         isInit = true;
     }
 
+    public Animator GetAnimator()
+    {
+        return playerAnimator;
+    }
+
     #endregion
 
 

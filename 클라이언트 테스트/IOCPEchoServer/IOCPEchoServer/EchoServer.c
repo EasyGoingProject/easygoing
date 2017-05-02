@@ -1,4 +1,5 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
 
 #include "EchoServer.h"
 #include "ClientList.h"
@@ -7,13 +8,13 @@
 #include <winsock2.h>
 #include <process.h>
 
-
+void Send_ClientNumber(CLIENT_LIST *clients, LP_CLIENT_DATA clientData);
+void Send_ClientList(CLIENT_LIST *clients);
 unsigned int __stdcall CompletionThread(LPVOID pComPort);
 void ErrorHandling(char *message);
 
-CLIENT_LIST *clientList;
 
-static int threadNum = 0;
+CLIENT_LIST *clientList;
 
 
 int main(int argc, char** argv)
@@ -32,11 +33,10 @@ int main(int argc, char** argv)
 	SOCKET hServSock;
 
 	//입출력 데이터 변수
-	LP_IO_DATA lpIoData;
-	LP_CLIENT_DATA lpClientData;
 	int RecvBytes;
 	int i, Flags;
 
+	int clientIndex = 0;
 
 	//==============  IOCP 서버 시작 ================
 
@@ -86,7 +86,6 @@ int main(int argc, char** argv)
 
 	printf("==> IOCP 서버 준비 완료\n\n");
 
-
 	while (TRUE)
 	{
 		//클라이언트 접속용 소켓 변수 등록
@@ -105,22 +104,33 @@ int main(int argc, char** argv)
 
 
 		//연결된 클라이언트의 소켓핸들정보와 주소정보를설정
+		LP_IO_DATA lpIoData;
+		LP_CLIENT_DATA lpClientData;
+
 		lpClientData = (LP_CLIENT_DATA)malloc(sizeof(CLIENT_DATA));
 		lpClientData->hClntSock = hClntSock;
+		lpClientData->clientNum = clientIndex;
 		memcpy(&(lpClientData->clntAddr), &clntAddr, addrLen);
 
+		clientIndex++;
 
 		//클라이언트 목록에 추가
 		AddToClientList(*lpClientData, clientList);
+
+		Send_ClientNumber(clientList, lpClientData);
+		//Send_HostNumber(clientList);
+		//Send_ClientList(clientList);
 
 		printf("\n[접속중 플레이어 현황]\n");
 
 		for (int i = 0; i < clientList->size; i++) {
 			printf("플레이어 %d : Address[%s]  Port[%d]\n", 
-				(i + 1), 
+				clientList->connectionList[i].clientNum,
 				inet_ntoa(clientList->connectionList[i].clntAddr.sin_addr),
 				ntohs(clientList->connectionList[i].clntAddr.sin_port));
 		}
+
+		
 
 		printf("\n");
 
@@ -140,16 +150,62 @@ int main(int argc, char** argv)
 		//중첩된데이터입력.
 		WSARecv(
 			lpClientData->hClntSock,	//연결 소켓을 가리키는 소켓 지정 번호
-			&lpIoData->wsaBuf,		//구조체 배열의 포인터, 버퍼크기
+			&(lpIoData->wsaBuf),		//구조체 배열의 포인터, 버퍼크기
 			1,							//구조체의 개수
 			(LPDWORD)&RecvBytes,		//데이터 입력이 완료된 경우, 읽은 데이터의 바이트 크기 output
 			(LPDWORD)&Flags,			//WSARecv 함수의 호출방식
-			&(lpIoData->overlapped),	//Overlapped 구조체의 포인터
+			&lpIoData->overlapped,		//Overlapped 구조체의 포인터
 			NULL						//데이터 입력이 완료 되었을 때 호출할 완료 루틴
 		);
 	}
 	return 0;
 }
+
+void Send_ClientNumber(CLIENT_LIST *clients, LP_CLIENT_DATA clientData) {
+	char buffer[64];
+	snprintf(buffer, sizeof(buffer), "Server-ClientNumber-%d,%d",
+		clients->size,
+		clientData->clientNum);
+
+	printf(buffer);
+	printf("\n");
+
+	int sendBytes = send(clientData->hClntSock, buffer, sizeof(buffer), 0);
+}
+
+void Send_ClientList(CLIENT_LIST *clients) {
+	char buffer[50] = "";
+	strcat(buffer, "Server-ClientList-");
+
+	printf("Client List Count %d\n", clients->size);
+
+	for (int i = 0; i < clients->size; i++) {
+		CLIENT_DATA client = clients->connectionList[i];
+		
+		char clientIndexStr[6];
+		char clientNumberStr[6];
+		char clientNameStr[20];
+		char clientCharacterStr[3];
+
+		sprintf(&clientIndexStr, "%d=", (clients->size -1 - i));
+		sprintf(&clientNumberStr, "%d=", client.clientNum);
+		sprintf(&clientNameStr, "%s=", client.clientName);
+		sprintf(&clientCharacterStr, "%s,", client.characterNum);
+
+		strcat(buffer, clientIndexStr);
+		strcat(buffer, clientNumberStr);
+		strcat(buffer, clientNameStr);
+		strcat(buffer, clientCharacterStr);
+	}
+
+	printf(buffer);
+	printf("\n");
+
+	for (int i = 0; i < clients->size + 1; i++) {
+		int sendBytes = send(clients->connectionList[i].hClntSock, buffer, sizeof(buffer), 0);
+	}
+}
+
 
 
 //입출력을 담당하는 쓰레드의 행동 정의
@@ -161,10 +217,14 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 	DWORD BytesTransferred;
 	//입출력될 데이터
 	LP_IO_DATA lpIoData;
-	LP_CLIENT_DATA lpClientData;
 	DWORD flags;
 
-	
+	LP_CLIENT_DATA lpClientData;
+	LP_CLIENT_DATA lpTargetClient;
+
+	char serverDataBuf[BUFSIZE];
+
+
 	//쓰레드 행동 시작
 	while (TRUE)
 	{
@@ -201,41 +261,62 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 			continue;
 		}
 		else {
-
 			//입력 받은 데이터 처리
-			lpIoData->wsaBuf.buf[BytesTransferred] = '\0';
-			printf("[%s:%d]에서 전송 : %s\n",
+			/*printf("[클라이언트 %d - %s:%d]에서 전송 : %s\n",
+				lpClientData->clientNum,
 				inet_ntoa(lpClientData->clntAddr.sin_addr),
 				ntohs(lpClientData->clntAddr.sin_port),
-				lpIoData->wsaBuf.buf);
+				lpIoData->wsaBuf.buf);*/
 
+			if (strstr(lpIoData->wsaBuf.buf, "Client") != NULL) {
+				if (strstr(lpIoData->wsaBuf.buf, "Connected") != NULL) {
+					
+					//printf("%s\n", lpIoData->wsaBuf.buf);
 
-			//입력받은 데이터를 클라이언트로 전송 (에코)
-			lpIoData->wsaBuf.len = BytesTransferred;
+					char *ptr = strtok(lpIoData->wsaBuf.buf, ",");
 
-			printf("전송받을 클라이언트 수 %d\n", clientList->size);
+					int ptrIndex = 0;
+					char *ptrArray[3];
 
-			for (int i = 0; i < clientList->size; i++) {
-				LP_CLIENT_DATA lpTargetClient = &clientList->connectionList[i];
+					while (ptr != NULL)
+					{
+						ptrArray[ptrIndex++] = ptr;
+						ptr = strtok(NULL, ",");
+					}
 
-				printf("[%d : %s:%d]로 전송\n",
-					i,
-					inet_ntoa(clientList->connectionList[i].clntAddr.sin_addr),
-					ntohs(clientList->connectionList[i].clntAddr.sin_port));
+					printf("1:%s-%s-%s\n", ptrArray[1], ptrArray[2], ptrArray[3]);
+					
+					SetClient(clientList, atoi(ptrArray[1]), ptrArray[2], ptrArray[3]);
 
-				if (WSASend(
-					lpTargetClient->hClntSock,	//연결 소켓을 가리키는 소켓 지정 번호
-					&(lpIoData->wsaBuf),		//구조체 배열의 포인터, 버퍼크기
-					1,							//구조체의 개수
-					lpIoData->wsaBuf.buf,		//함수의 호출로 전송된 데이터의 바이트 크기
-					0,							//WSASend 함수의 호출방식
-					NULL,						//Overlapped 구조체의 포인터
-					NULL						//데이터 전송이 완료 되었을 때 호출할 완료 루틴
-				) == SOCKET_ERROR)
-				{
-					if (WSAGetLastError() != WSA_IO_PENDING) {
-						printf("WSASend Error : %d\n", WSAGetLastError());
-						continue;
+					Send_ClientList(clientList);
+				}
+			}
+			else {
+				//입력받은 데이터를 클라이언트로 전송 (에코)
+				lpIoData->wsaBuf.len = BytesTransferred;
+
+				for (int i = 0; i < clientList->size; i++) {
+					lpTargetClient = &clientList->connectionList[i];
+
+					printf("[%d : %s:%d]로 전송\n",
+						clientList->connectionList[i].clientNum,
+						inet_ntoa(clientList->connectionList[i].clntAddr.sin_addr),
+						ntohs(clientList->connectionList[i].clntAddr.sin_port));
+
+					if (WSASend(
+						lpTargetClient->hClntSock,	//연결 소켓을 가리키는 소켓 지정 번호
+						&(lpIoData->wsaBuf),		//구조체 배열의 포인터, 버퍼크기
+						1,							//구조체의 개수
+						lpIoData->wsaBuf.buf,		//함수의 호출로 전송된 데이터의 바이트 크기
+						0,							//WSASend 함수의 호출방식
+						NULL,						//Overlapped 구조체의 포인터
+						NULL						//데이터 전송이 완료 되었을 때 호출할 완료 루틴
+					) == SOCKET_ERROR)
+					{
+						if (WSAGetLastError() != WSA_IO_PENDING) {
+							printf("WSASend Error : %d\n", WSAGetLastError());
+							continue;
+						}
 					}
 				}
 			}
@@ -252,9 +333,9 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 				lpClientData->hClntSock,	//연결 소켓을 가리키는 소켓 지정 번호
 				&(lpIoData->wsaBuf),		//구조체 배열의 포인터, 버퍼크기
 				1,							//구조체의 개수
-				&BytesTransferred,			//데이터 입력이 완료된 경우, 읽은 데이터의 바이트 크기 output
+				lpIoData->wsaBuf.buf,			//데이터 입력이 완료된 경우, 읽은 데이터의 바이트 크기 output
 				&flags,						//WSARecv 함수의 호출방식
-				&lpIoData->overlapped,	//Overlapped 구조체의 포인터
+				&lpIoData->overlapped,		//Overlapped 구조체의 포인터
 				NULL						//데이터 입력이 완료 되었을 때 호출할 완료 루틴
 			) == SOCKET_ERROR) {
 				if (WSAGetLastError() != WSA_IO_PENDING) {
@@ -274,3 +355,16 @@ void ErrorHandling(char *message)
 	fputc('\n', stderr);
 	exit(1);
 }
+
+char * toArray(int number)
+{
+	int n = log10(number) + 1;
+	int i;
+	char *numberArray = calloc(n, sizeof(char));
+	for (i = 0; i < n; ++i, number /= 10)
+	{
+		numberArray[i] = number % 10;
+	}
+	return numberArray;
+}
+

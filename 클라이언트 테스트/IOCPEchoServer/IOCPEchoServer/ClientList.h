@@ -16,6 +16,7 @@ typedef struct {
 
 void ListInit(CLIENT_LIST *list);
 BOOL AddToClientList(CLIENT_DATA connection, CLIENT_LIST *list);
+void SetClient(CLIENT_LIST * list, int clientNumber, char *clientName, char *characterNum);
 BOOL RemoveAtClientList(CLIENT_LIST *list);
 void ClearClientList(CLIENT_LIST *list);
 

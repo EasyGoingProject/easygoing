@@ -738,6 +738,7 @@ GameObject:
   - 136: {fileID: 136000012079552038}
   - 54: {fileID: 54000011628634024}
   - 114: {fileID: 114000011032328632}
+  - 114: {fileID: 114000013167356528}
   m_Layer: 9
   m_Name: Enemy001_NativeChaser
   m_TagString: Enemy
@@ -2377,6 +2378,22 @@ MonoBehaviour:
   attackPoint: {fileID: 4000012618384556}
   enemyAnimator: {fileID: 95000011887096580}
   HUDTarget: {fileID: 4000012161559988}
+--- !u!114 &114000013167356528
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000013321844564}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a181a6ab137c02640ba9b4c04f3f2195, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  positionLerpRate: 15
+  rotationLerpRate: 15
+  positionThreshold: 0.05
+  rotationThreshold: 1
+  isLocalPlayer: 1
 --- !u!136 &136000012079552038
 CapsuleCollider:
   m_ObjectHideFlags: 1

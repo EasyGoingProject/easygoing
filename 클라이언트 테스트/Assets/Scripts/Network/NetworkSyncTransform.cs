@@ -24,6 +24,21 @@ public class NetworkSyncTransform : MonoBehaviour {
         thisTrans = transform;
     }
 
+    public void SetTransform(NetworkVector pos, NetworkVector rot)
+    {
+        lastPosition = new Vector3(pos.x, pos.y, pos.z);
+        lastRotation = new Vector3(rot.x, rot.y, rot.z);
+    }
+
+    public void SetTransform(Vector3 pos, Vector3 rot)
+    {
+        lastPosition = pos;
+        lastRotation = rot;
+
+        thisTrans.position = lastPosition;
+        thisTrans.eulerAngles = lastPosition;
+    }
+
     void Update()
     {
         if (isLocalPlayer)
@@ -52,7 +67,26 @@ public class NetworkSyncTransform : MonoBehaviour {
         {
             lastPosition = thisTrans.position;
             lastRotation = thisTrans.eulerAngles;
-            IOCPManager.GetInstance.SendTransform(thisTrans.position, thisTrans.rotation);
+
+            IOCPManager.GetInstance.SendToServerMessage(
+                new NetworkData()
+                {
+                    senderId = IOCPManager.senderId,
+                    sendType = SendType.SYNCTRANSFORM,
+                    position = new NetworkVector()
+                    {
+                        x = thisTrans.position.x,
+                        y = thisTrans.position.y,
+                        z = thisTrans.position.z,
+                    },
+                    rotation = new NetworkVector()
+                    {
+                        x = thisTrans.eulerAngles.x,
+                        y = thisTrans.eulerAngles.y,
+                        z = thisTrans.eulerAngles.z,
+
+                    }
+                });
         }
     }
 

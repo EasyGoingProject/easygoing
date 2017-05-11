@@ -4,6 +4,9 @@ using System.Collections.Generic;
 
 public class NetworkSyncAnimator : MonoBehaviour
 {
+    public ObjectType objectType = ObjectType.Player;
+    public int objectNetworkId = 0;
+
     [SerializeField]
     private float positionLerpRate = 0.05f;
     [SerializeField]
@@ -16,16 +19,25 @@ public class NetworkSyncAnimator : MonoBehaviour
 
     private bool isInit = false;
 
-    public void Init(Animator _animator, int _senderId, bool _isLocalPlayer)
+    public void Init(Animator _animator, int _networkId, bool _isLocalPlayer)
     {
         playerAnimator = _animator;
 
         netData = new NetworkData();
-        netData.senderId = _senderId;
-        netData.sendType = SendType.ANIMATOR_MOVE;
+        netData.senderId = _networkId;
+        
+        if (objectType == ObjectType.Player)
+        {
+            netData.sendType = SendType.ANIMATOR_MOVE;
+        }
+        else if (objectType == ObjectType.Enemy)
+        {
+            objectNetworkId = _networkId;
+            netData.targetId = objectNetworkId;
+            netData.sendType = SendType.ENEMY_ANIMATOR_MOVE;
+        }
 
         isLocalPlayer = _isLocalPlayer;
-
         isInit = true;
     }
 
@@ -124,17 +136,30 @@ public class NetworkSyncAnimator : MonoBehaviour
                 break;
         }
 
-        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        if (objectType == ObjectType.Player)
         {
-            senderId = netData.senderId,
-            sendType = SendType.ANIMATOR_TRIGGER,
-            animator = netAnimator
-        });
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = netData.senderId,
+                sendType = SendType.ANIMATOR_TRIGGER,
+                animator = netAnimator
+            });
+        }
+        else if(objectType == ObjectType.Enemy)
+        {
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = netData.senderId,
+                targetId = objectNetworkId,
+                sendType = SendType.ENEMY_ANIMATOR_TRIGGER,
+                animator = netAnimator
+            });
+        }
     }
 
     public void JumpAnimation()
     {
-        NetworkData netAnimTrigger = new NetworkData()
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
         {
             senderId = netData.senderId,
             sendType = SendType.ANIMATOR_TRIGGER,
@@ -147,26 +172,44 @@ public class NetworkSyncAnimator : MonoBehaviour
                 die = false,
                 jump = true
             }
-        };
-
-        IOCPManager.GetInstance.SendToServerMessage(netAnimTrigger);
+        });
     }
 
     public void DieAnimation()
     {
-        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        if (objectType == ObjectType.Player)
         {
-            senderId = netData.senderId,
-            sendType = SendType.ANIMATOR_TRIGGER,
-            animator = new NetworkAnimator()
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
             {
-                attackBow = false,
-                attackNormal = false,
-                attackSpear = false,
-                attackThrow = false,
-                die = true,
-                jump = false
-            }
-        });
+                senderId = netData.senderId,
+                sendType = SendType.ANIMATOR_TRIGGER,
+                animator = new NetworkAnimator()
+                {
+                    attackBow = false,
+                    attackNormal = false,
+                    attackSpear = false,
+                    attackThrow = false,
+                    die = true,
+                    jump = false
+                }
+            });
+        }
+        else if(objectType == ObjectType.Enemy)
+        {
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = netData.senderId,
+                sendType = SendType.ENEMY_ANIMATOR_TRIGGER,
+                animator = new NetworkAnimator()
+                {
+                    attackBow = false,
+                    attackNormal = false,
+                    attackSpear = false,
+                    attackThrow = false,
+                    die = true,
+                    jump = false
+                }
+            });
+        }
     }
 }

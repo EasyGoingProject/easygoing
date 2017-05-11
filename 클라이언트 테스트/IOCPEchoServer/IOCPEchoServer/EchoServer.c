@@ -243,6 +243,9 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 			free(lpIoData);
 
 			RemoveAtClientList(clientList);
+
+			Send_ClientList(clientList);
+
 			return 1;
 		}
 
@@ -258,6 +261,9 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 			free(lpIoData);
 
 			RemoveAtClientList(clientList);
+
+			Send_ClientList(clientList);
+
 			continue;
 		}
 		else {
@@ -270,9 +276,6 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 
 			if (strstr(lpIoData->wsaBuf.buf, "Client") != NULL) {
 				if (strstr(lpIoData->wsaBuf.buf, "Connected") != NULL) {
-					
-					//printf("%s\n", lpIoData->wsaBuf.buf);
-
 					char *ptr = strtok(lpIoData->wsaBuf.buf, ",");
 
 					int ptrIndex = 0;
@@ -284,7 +287,7 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 						ptr = strtok(NULL, ",");
 					}
 
-					printf("1:%s-%s-%s\n", ptrArray[1], ptrArray[2], ptrArray[3]);
+					printf("Connected:%s-%s-%s\n", ptrArray[1], ptrArray[2], ptrArray[3]);
 					
 					SetClient(clientList, atoi(ptrArray[1]), ptrArray[2], ptrArray[3]);
 

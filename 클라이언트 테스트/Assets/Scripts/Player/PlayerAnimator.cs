@@ -16,8 +16,9 @@ public class PlayerAnimator : MonoBehaviour
     #region [ Init ]
 
     // 애니메이터 초기화
-    public void InitAnimator()
+    public void InitAnimator(Animator _playerAnimator)
     {
+        playerAnimator = _playerAnimator;
         isInit = true;
     }
 

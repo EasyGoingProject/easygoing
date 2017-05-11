@@ -1,7 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class UIManager : Singleton<UIManager> {
+public class UIManager : Singleton<UIManager>
+{
+    private void Awake()
+    {
+        InitPlayerInfo();
+        InitPanel();
+    }
+
+    private void Update()
+    {
+        UpdateCheckTargetPanel();
+    }
+
+    #region [ Camera ] 
 
     public Camera uiCamera;
 
@@ -9,6 +22,47 @@ public class UIManager : Singleton<UIManager> {
     {
         get { return uiCamera; }
     }
+
+    #endregion
+
+
+    #region [ Panel Control ]
+
+    [Header("[Panel Control]")]
+    public GameObject[] panelObjs;
+    public PanelType currentPanelType;
+    private PanelType targetPanelType = PanelType.None;
+
+    private void InitPanel()
+    {
+        ShowPanel(PanelType.Connection);
+    }
+
+    private void UpdateCheckTargetPanel()
+    {
+        if (targetPanelType != PanelType.None)
+        {
+            ShowPanel(targetPanelType);
+            targetPanelType = PanelType.None;
+        }
+    }
+
+    public void SetTargetPanel(PanelType _targetPanel)
+    {
+        targetPanelType = _targetPanel;
+    }
+
+    public void ShowPanel(PanelType panelType)
+    {
+        currentPanelType = panelType;
+
+        for(int i=0; i< panelObjs.Length - 1; i++)
+        {
+            panelObjs[i].SetActive(i == (int)panelType);
+        }
+    }
+
+    #endregion
 
 
     #region [ Player Info ]
@@ -18,6 +72,13 @@ public class UIManager : Singleton<UIManager> {
     private UIGrid gridPlayerInfo;
     [SerializeField]
     private PlayerInfo playerInfoPrefab;
+    public PlayerLobbyInfo[] playerLobbyInfos;
+
+    private void InitPlayerInfo()
+    {
+        for (int i = 0; i < playerLobbyInfos.Length; i++)
+            NGUITools.SetActive(playerLobbyInfos[i].gameObject, false);
+    }
 
     public PlayerInfo AddPlayerInfo(CharacterData characterData, ClientData clientData)
     {
@@ -29,6 +90,27 @@ public class UIManager : Singleton<UIManager> {
 
         return playerInfo;
     }
+
+    public PlayerLobbyInfo AddPlayerLobbyInfo(ClientData clientData)
+    {
+        NGUITools.SetActive(playerLobbyInfos[clientData.clientIndex].gameObject, true);
+        playerLobbyInfos[clientData.clientIndex].SetLobbyInfo(clientData);
+        return playerLobbyInfos[clientData.clientIndex];
+    }
+
+    #endregion
+
+
+    #region [ Character Texture ]
+
+    [Header("[ Character Texture ]")]
+    public CharacterDatabase characterDB;
+
+    public Texture2D GetCharacterTexture(CharacterType _charType)
+    {
+        return characterDB.Get(_charType).texCharacter;
+    }
+
 
     #endregion
 
@@ -53,4 +135,13 @@ public class UIManager : Singleton<UIManager> {
     }
 
     #endregion
+}
+
+public enum PanelType
+{
+    Connection = 0,
+    Lobby,
+    Play,
+    Result,
+    None
 }

@@ -24,6 +24,7 @@ GameObject:
   - 23: {fileID: 23000013998585306}
   - 114: {fileID: 114000013469535564}
   - 54: {fileID: 54000010726828798}
+  - 114: {fileID: 114000013472415740}
   m_Layer: 16
   m_Name: EnemyAttack_NativeChaser
   m_TagString: Untagged
@@ -50,14 +51,14 @@ MeshRenderer:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000012568755798}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_MotionVectors: 1
+  m_ReceiveShadows: 0
+  m_MotionVectors: 0
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: d4dfabea48494ec42933d62eeca8e24a, type: 2}
   m_SubsetIndices: 
   m_StaticBatchRoot: {fileID: 0}
   m_ProbeAnchor: {fileID: 0}
@@ -106,6 +107,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e68204e923c29a45b46279bf2cf86ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &114000013472415740
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000012568755798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a181a6ab137c02640ba9b4c04f3f2195, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objectType: 1
+  objectNetworkId: 0
+  positionLerpRate: 15
+  rotationLerpRate: 15
+  positionThreshold: 0.5
+  rotationThreshold: 10
+  isLocalPlayer: 0
 --- !u!135 &135000012416247132
 SphereCollider:
   m_ObjectHideFlags: 1

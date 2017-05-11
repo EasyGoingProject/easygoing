@@ -88,6 +88,13 @@ public static class GlobalData
     public static string BUTTON_JUMP = "Jump";
 
     #endregion
+
+
+    #region [ ITEM ]
+
+    public const float ITEM_HEALTH_HEAL_AMOUNT = 20.0f;
+
+    #endregion
 }
 
 
@@ -110,7 +117,8 @@ public enum WeaponType
     HAND = 0,
     SPEAR,
     BOW,
-    THROW
+    THROW,
+    SWORD
 }
 
 
@@ -120,7 +128,8 @@ public enum ItemType
     HEALTH = 0,
     WEAPON_SPEAR,
     WEAPON_BOW,
-    WEAPON_THROW
+    WEAPON_THROW,
+    WEAPON_SWORD
 }
 
 

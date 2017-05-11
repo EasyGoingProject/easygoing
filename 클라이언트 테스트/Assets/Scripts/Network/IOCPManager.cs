@@ -8,6 +8,7 @@ using System.Net.Sockets;
 public class IOCPManager : Singleton<IOCPManager>
 {
     public GameManager gameManager;
+    public UIManager uiManager;
 
     private void Start()
     {
@@ -79,14 +80,13 @@ public class IOCPManager : Singleton<IOCPManager>
     public string serverAddress = "127.0.0.1";
     public int serverPort = 2738;
     public string playerName = "UnknownPlayer";
-    public int characterIndex = 0;
+    public CharacterType characterType;
     public static ClientData connectionData;
 
     public static int senderId = -1;
 
     public TCPClient client;
 
-    public GameObject panelServerConnect;
     public UIButton btnServerConnect;
 
     private string[] receiveSplit;
@@ -115,7 +115,7 @@ public class IOCPManager : Singleton<IOCPManager>
         try
         {
             client.StartConnect(this);
-            panelServerConnect.SetActive(false);
+            uiManager.ShowPanel(PanelType.Lobby);
         }
         catch (Exception e)
         {
@@ -194,12 +194,84 @@ public class IOCPManager : Singleton<IOCPManager>
                 case SendType.HIT:
                     clientControlList[netData.targetId].LossHealth(netData.power);
                     break;
+
+                case SendType.READY:
+                    clientControlList[netData.senderId].PlayerReady();
+                    AllReadyCheck(true);
+                    break;
+
+                case SendType.GAMESTART:
+                    uiManager.SetTargetPanel(PanelType.Play);
+                    gameManager.GamePlay();
+                    break;
+
+                case SendType.DIE:
+                    clientControlList[netData.senderId].DoActionDie();
+                    break;
+
+                case SendType.ADDHEALTH:
+                    clientControlList[netData.senderId].AddHealth(GlobalData.ITEM_HEALTH_HEAL_AMOUNT);
+                    break;
+
+                case SendType.SPAWN_ITEM:
+                    gameManager.itemDataList.Add(netData);
+                    break;
+
+                case SendType.EQUIPWEAPON:
+                    clientControlList[netData.senderId].SetWeapon(netData.weaponType);
+                    break;
+
+                case SendType.OBJECT_SYNC_TRANSFORM:
+                    gameManager.networkObjectList[netData.targetId].SetTransform(netData.position, netData.rotation);
+                    break;
+
+                case SendType.DESTORY_OBJECT:
+                    gameManager.removeObjectList.Add(netData);
+                    break;
+
+                case SendType.SPAWN_ENEMY:
+                    gameManager.enemyDataList.Add(netData);
+                    break;
+
+                case SendType.ENEMY_SYNC_TRANSFORM:
+                    gameManager.networkEnemyList[netData.targetId].netSyncTrans.SetTransform(netData.position, netData.rotation);
+                    break;
+
+                case SendType.ENEMY_ANIMATOR_MOVE:
+                    gameManager.networkEnemyList[netData.targetId].netSyncAnimator.SetAnimatorMove(netData);
+                    break;
+
+                case SendType.ENEMY_ANIMATOR_TRIGGER:
+                    gameManager.networkEnemyList[netData.targetId].netSyncAnimator.NetworkReceiveTrigger(netData);
+                    break;
+
+                case SendType.ENEMY_ATTACK:
+                    gameManager.enemyAttackDataList.Add(netData);
+                    break;
             }
         }
         catch (Exception e)
         {
             Debug.Log("Receive Error " + e.ToString());
         }
+    }
+
+    private void AllReadyCheck(bool isChecking)
+    {
+        PlayerControl hostPlayer = null;
+        bool isAllReady = true;
+
+        foreach (KeyValuePair<int, PlayerControl> keyVal in clientControlList)
+        {
+            if (keyVal.Value.clientData.isHost)
+                hostPlayer = keyVal.Value;
+
+            if (!isChecking || !keyVal.Value.IsPlayerReady)
+                isAllReady = false;
+        }
+
+        if (hostPlayer != null)
+            hostPlayer.AllPlayerReady(isAllReady);
     }
 
     public void ReceiveData(ServerMessageType servMesType, string innerData)
@@ -221,6 +293,8 @@ public class IOCPManager : Singleton<IOCPManager>
                 client.connectState = TCPClient.ConnectionState.Connected;
 
                 receiveSplit = innerData.Split(","[0]);
+
+                AllReadyCheck(false);
 
                 for (int i = 0; i < receiveSplit.Length - 1; i++)
                 {
@@ -299,6 +373,7 @@ public class ClientData
 {
     public int clientNumber;
     public CharacterType characterType;
+    public bool isReady = false;
     public bool isSpawned = false;
     public bool isDie = false;
     public bool isLocalPlayer = false;

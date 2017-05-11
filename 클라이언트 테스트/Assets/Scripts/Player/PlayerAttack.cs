@@ -92,25 +92,7 @@ public class PlayerAttack : MonoBehaviour
             currentWeaponData.damage * power);
         */
 
-        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
-        {
-            senderId = IOCPManager.senderId,
-            sendType = SendType.ATTACK,
-            weaponType = currentWeaponData.weaponType,
-            position = new NetworkVector()
-            {
-                x = attackPoint.position.x,
-                y = attackPoint.position.y,
-                z = attackPoint.position.z
-            },
-            rotation = new NetworkVector()
-            {
-                x = attackPoint.eulerAngles.x,
-                y = attackPoint.eulerAngles.y,
-                z = attackPoint.eulerAngles.z
-            },
-            power = power
-        });
+        GameManager.GetInstance.SendAttack(currentWeaponData.weaponType, attackPoint, power);
     }
 
     // 공격 초기화

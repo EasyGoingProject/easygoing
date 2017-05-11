@@ -1,0 +1,88 @@
+﻿using UnityEngine;
+using System.Collections;
+
+public class PlayerLobbyInfo : MonoBehaviour
+{
+    public UITexture texCharacter;
+    public UILabel lbPlayerName;
+    public GameObject objHost;
+    public UIButton btnReady;
+    public UIButton btnStart;
+    public UISprite sprBorder;
+
+    public Color[] borderColor;
+
+    private ClientData clientData;
+
+    public bool isReady = false;
+    private bool isReadySet = false;
+    private bool isAllReady = false;
+
+    public void SetLobbyInfo(ClientData _clientData)
+    {
+        clientData = _clientData;
+
+        NGUITools.SetActive(objHost, clientData.isHost);
+        NGUITools.SetActive(btnStart.gameObject, false);
+        NGUITools.SetActive(btnReady.gameObject, clientData.isLocalPlayer);
+
+        lbPlayerName.text = clientData.clientName;
+        texCharacter.mainTexture = UIManager.GetInstance.GetCharacterTexture(clientData.characterType);
+        sprBorder.color = borderColor[0];
+        isReady = false;
+        isReadySet = false;
+        isAllReady = false;
+
+        EventDelegate.Add(btnReady.onClick, OnReady);
+        EventDelegate.Add(btnStart.onClick, OnGameStart);
+    }
+
+    private void OnReady()
+    {
+        NetworkData readyNetData = new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            sendType = SendType.READY
+        };
+
+        IOCPManager.GetInstance.SendToServerMessage(readyNetData);
+    }
+
+    public void ClientReady()
+    {
+        isReady = true;
+    }
+
+    public void AllReady(bool _isAllReady)
+    {
+        if (clientData.isHost)
+            isAllReady = _isAllReady;
+    }
+
+    private void OnGameStart()
+    {
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            sendType = SendType.GAMESTART
+        });
+    }
+
+    private void FixedUpdate()
+    {
+        if (isReady)
+        {
+            if(!isReadySet)
+            {
+                isReadySet = true;
+                sprBorder.color = borderColor[1];
+                btnReady.gameObject.SetActive(false);
+            }
+        }
+
+        if (isAllReady && !btnStart.gameObject.activeSelf)
+            btnStart.gameObject.SetActive(true);
+        else if (!isAllReady && btnStart.gameObject.activeSelf)
+            btnStart.gameObject.SetActive(false);
+    }
+}

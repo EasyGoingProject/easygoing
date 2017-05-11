@@ -132,13 +132,8 @@ public class TCPClient : MonoBehaviour
                 iocpManager.ReceiveData(servMesType, serverMessageSplit[2]);
 
                 if(servMesType == ServerMessageType.ClientNumber)
-                {
-                    SendClientData(string.Concat(
-                        "Connected", ",",
-                        IOCPManager.senderId, ",",
-                        iocpManager.playerName, ",",
-                        iocpManager.characterIndex, ","));
-                }
+                    SendClientConnected();
+
 #if DEBUGGING
                 Debug.Log(servMesType);
 #endif
@@ -166,6 +161,15 @@ public class TCPClient : MonoBehaviour
 
 
     #region [ Send ]
+
+    public void SendClientConnected()
+    {
+        SendClientData(string.Concat(
+                        "Connected", ",",
+                        IOCPManager.senderId, ",",
+                        iocpManager.playerName, ",",
+                        (int)iocpManager.characterType, ","));
+    }
 
     public void SendClientData(string message)
     {

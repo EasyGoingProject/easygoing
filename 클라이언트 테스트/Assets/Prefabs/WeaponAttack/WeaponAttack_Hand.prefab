@@ -24,6 +24,7 @@ GameObject:
   - 23: {fileID: 23000013998585306}
   - 54: {fileID: 54000010726828798}
   - 114: {fileID: 114000014012781060}
+  - 114: {fileID: 114000010401178366}
   m_Layer: 17
   m_Name: WeaponAttack_Hand
   m_TagString: Untagged
@@ -38,8 +39,8 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1000012568755798}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 4.538, z: 0.8}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_LocalPosition: {x: 0, y: 4.724, z: 0.8}
+  m_LocalScale: {x: 0.8, y: 0.8, z: 0.8}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_Children: []
   m_Father: {fileID: 0}
@@ -95,6 +96,24 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &114000010401178366
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000012568755798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a181a6ab137c02640ba9b4c04f3f2195, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  objectType: 1
+  objectNetworkId: 0
+  positionLerpRate: 15
+  rotationLerpRate: 15
+  positionThreshold: 0.5
+  rotationThreshold: 15
+  isLocalPlayer: 0
 --- !u!114 &114000014012781060
 MonoBehaviour:
   m_ObjectHideFlags: 1

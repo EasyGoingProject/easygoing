@@ -24,7 +24,7 @@ MonoBehaviour:
     attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
       type: 2}
     attackActiveDelay: 0.1
-    attackActiveDuration: 0.2
+    attackActiveDuration: 0.1
     attackObjectSpeed: 0
     enemyPrefab: {fileID: 1000013321844564, guid: dab4d2287c8b19d48b09d8ee6a032324,
       type: 2}

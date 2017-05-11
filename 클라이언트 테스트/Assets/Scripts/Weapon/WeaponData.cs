@@ -22,4 +22,6 @@ public struct WeaponData
     public float attackActiveDuration;
     // 공격 오브젝트 속도
     public float attackObjectSpeed;
+
+    public float attackUpAmount;
 }

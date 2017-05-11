@@ -40,19 +40,35 @@ public class EnemyAttackObject : MonoBehaviour
     {
         if (isHit)
             return;
-        if (col.gameObject.layer == LayerMask.NameToLayer(GlobalData.LAYER_PLAYER)
-            && col.gameObject.CompareTag(GlobalData.TAG_PLAYER))
+
+        if (col.gameObject.CompareTag(GlobalData.TAG_PLAYER))
         {
+            PlayerControl pControl = col.gameObject.GetComponent<PlayerControl>();
+            if (pControl == null)
+                return;
+
             isHit = true;
 
-            col.gameObject.GetComponent<PlayerControl>().LossHealth(damage);
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = IOCPManager.senderId,
+                sendType = SendType.HIT,
+                targetId = pControl.clientData.clientNumber,
+                power = damage,
+            });
+
             Dispose();
         }
     }
 
     private void Dispose()
     {
-        Destroy(gameObject);
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            targetId = GetComponent<NetworkSyncTransform>().objectNetworkId,
+            sendType = SendType.DESTORY_OBJECT
+        });
     }
 }
 

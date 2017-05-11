@@ -13,6 +13,8 @@ public struct NetworkData
     public string message;
     public float life;
     public float power;
+    public ItemType itemType;
+    public EnemyType enemyType;
     public WeaponType weaponType;
     public NetworkVector position;
     public NetworkVector rotation;
@@ -52,12 +54,32 @@ public enum SendType
 {
     RESPONSE = 0,
     JOIN = 1,
+
     SYNCTRANSFORM = 2,
     ANIMATOR_MOVE = 3,
     ANIMATOR_TRIGGER = 4,
+
     ATTACK = 5,
     HIT = 6,
+    ADDHEALTH = 12,
     DIE = 7,
-    MESSAGE = 10
+
+    READY = 8,
+    GAMESTART = 9,
+
+    MESSAGE = 10,
+
+    EQUIPWEAPON = 11,
+
+    OBJECT_SYNC_TRANSFORM = 14,
+    DESTORY_OBJECT = 15,
+
+    SPAWN_ITEM = 13,
+    SPAWN_ENEMY = 16,
+
+    ENEMY_SYNC_TRANSFORM = 17,
+    ENEMY_ANIMATOR_MOVE = 18,
+    ENEMY_ANIMATOR_TRIGGER = 19,
+    ENEMY_ATTACK = 20
 }
 

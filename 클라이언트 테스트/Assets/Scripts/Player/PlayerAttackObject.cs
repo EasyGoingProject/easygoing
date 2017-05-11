@@ -8,6 +8,7 @@ public class PlayerAttackObject : MonoBehaviour
     private float damage;
 
     private Transform attackTrans;
+    private Rigidbody attackRigid;
     private bool isNonMove = false;
     private bool isHit = false;
 
@@ -15,9 +16,10 @@ public class PlayerAttackObject : MonoBehaviour
 
     private int createPlayerId;
 
-    public void SetAttack(int senderId, float _duration, float _speed, float _damage)
+    public void SetAttack(int senderId, float _duration, float _speed, float _damage, float _upAmount)
     {
         attackTrans = transform;
+        attackRigid = GetComponent<Rigidbody>();
 
         createPlayerId = senderId;
         duration = _duration;
@@ -25,6 +27,13 @@ public class PlayerAttackObject : MonoBehaviour
         damage = _damage;
 
         isNonMove = !(speed > 0);
+
+        if (!isNonMove)
+        {
+            Vector3 attackDirect = attackTrans.forward;
+            attackDirect.y += _upAmount;
+            attackRigid.AddForce(attackDirect * speed, ForceMode.Impulse);
+        }
     }
 
     void Update()
@@ -34,10 +43,10 @@ public class PlayerAttackObject : MonoBehaviour
         if (lifeTimer > duration)
             Dispose();
 
-        if (isNonMove)
-            return;
+        //if (isNonMove)
+        //    return;
 
-        attackTrans.Translate(attackTrans.forward * Time.deltaTime * speed, Space.Self);
+        //attackTrans.Translate(attackTrans.forward * Time.deltaTime * speed, Space.Self);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -68,6 +77,13 @@ public class PlayerAttackObject : MonoBehaviour
 
     private void Dispose()
     {
-        Destroy(gameObject);
+        //Destroy(gameObject);
+
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            targetId = GetComponent<NetworkSyncTransform>().objectNetworkId,
+            sendType = SendType.DESTORY_OBJECT
+        });
     }
 }

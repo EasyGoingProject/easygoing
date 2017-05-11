@@ -1,7 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+public enum ObjectType
+{
+    Player,
+    Object,
+    Enemy
+}
+
 public class NetworkSyncTransform : MonoBehaviour {
+
+    public ObjectType objectType = ObjectType.Player;
+    public int objectNetworkId = 0;
 
     [SerializeField]
     private float positionLerpRate = 15;
@@ -22,6 +32,12 @@ public class NetworkSyncTransform : MonoBehaviour {
     void Awake()
     {
         thisTrans = transform;
+    }
+
+    public void SetObject(int _objectNetworkId, bool isLocal)
+    {
+        objectNetworkId = _objectNetworkId;
+        isLocalPlayer = isLocal;
     }
 
     public void SetTransform(NetworkVector pos, NetworkVector rot)
@@ -68,25 +84,72 @@ public class NetworkSyncTransform : MonoBehaviour {
             lastPosition = thisTrans.position;
             lastRotation = thisTrans.eulerAngles;
 
-            IOCPManager.GetInstance.SendToServerMessage(
-                new NetworkData()
-                {
-                    senderId = IOCPManager.senderId,
-                    sendType = SendType.SYNCTRANSFORM,
-                    position = new NetworkVector()
+            if (objectType == ObjectType.Player)
+            {
+                IOCPManager.GetInstance.SendToServerMessage(
+                    new NetworkData()
                     {
-                        x = thisTrans.position.x,
-                        y = thisTrans.position.y,
-                        z = thisTrans.position.z,
-                    },
-                    rotation = new NetworkVector()
-                    {
-                        x = thisTrans.eulerAngles.x,
-                        y = thisTrans.eulerAngles.y,
-                        z = thisTrans.eulerAngles.z,
+                        senderId = IOCPManager.senderId,
+                        sendType = SendType.SYNCTRANSFORM,
+                        position = new NetworkVector()
+                        {
+                            x = thisTrans.position.x,
+                            y = thisTrans.position.y,
+                            z = thisTrans.position.z,
+                        },
+                        rotation = new NetworkVector()
+                        {
+                            x = thisTrans.eulerAngles.x,
+                            y = thisTrans.eulerAngles.y,
+                            z = thisTrans.eulerAngles.z,
 
-                    }
-                });
+                        }
+                    });
+            }
+            else if (objectType == ObjectType.Enemy)
+            {
+                IOCPManager.GetInstance.SendToServerMessage(
+                   new NetworkData()
+                   {
+                       senderId = IOCPManager.senderId,
+                       targetId = objectNetworkId,
+                       sendType = SendType.ENEMY_SYNC_TRANSFORM,
+                       position = new NetworkVector()
+                       {
+                           x = thisTrans.position.x,
+                           y = thisTrans.position.y,
+                           z = thisTrans.position.z,
+                       },
+                       rotation = new NetworkVector()
+                       {
+                           x = thisTrans.eulerAngles.x,
+                           y = thisTrans.eulerAngles.y,
+                           z = thisTrans.eulerAngles.z,
+                       }
+                   });
+            }
+            else if(objectType == ObjectType.Object)
+            {
+                IOCPManager.GetInstance.SendToServerMessage(
+                    new NetworkData()
+                    {
+                        senderId = IOCPManager.senderId,
+                        targetId = objectNetworkId,
+                        sendType = SendType.OBJECT_SYNC_TRANSFORM,
+                        position = new NetworkVector()
+                        {
+                            x = thisTrans.position.x,
+                            y = thisTrans.position.y,
+                            z = thisTrans.position.z,
+                        },
+                        rotation = new NetworkVector()
+                        {
+                            x = thisTrans.eulerAngles.x,
+                            y = thisTrans.eulerAngles.y,
+                            z = thisTrans.eulerAngles.z,
+                        }
+                    });
+            }
         }
     }
 

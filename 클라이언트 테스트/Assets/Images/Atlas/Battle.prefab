@@ -53,9 +53,87 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: 95f482aa5d3ea9c429a036408d2bfe7c, type: 2}
   mSprites:
+  - name: Button_Rectangular_Brown_Background
+    x: 879
+    y: 473
+    width: 259
+    height: 116
+    borderLeft: 0
+    borderRight: 0
+    borderTop: 0
+    borderBottom: 0
+    paddingLeft: 0
+    paddingRight: 0
+    paddingTop: 0
+    paddingBottom: 0
+  - name: Button_Rectangular_Brown_Press_Overlay
+    x: 879
+    y: 370
+    width: 244
+    height: 102
+    borderLeft: 0
+    borderRight: 0
+    borderTop: 0
+    borderBottom: 0
+    paddingLeft: 0
+    paddingRight: 0
+    paddingTop: 0
+    paddingBottom: 0
+  - name: Button_Rectangular_Large_Background
+    x: 1033
+    y: 51
+    width: 482
+    height: 164
+    borderLeft: 0
+    borderRight: 0
+    borderTop: 0
+    borderBottom: 0
+    paddingLeft: 0
+    paddingRight: 0
+    paddingTop: 0
+    paddingBottom: 0
+  - name: Button_Rectangular_Large_Green_Background
+    x: 513
+    y: 590
+    width: 482
+    height: 164
+    borderLeft: 0
+    borderRight: 0
+    borderTop: 0
+    borderBottom: 0
+    paddingLeft: 0
+    paddingRight: 0
+    paddingTop: 0
+    paddingBottom: 0
+  - name: Button_Rectangular_Large_Red_Background
+    x: 828
+    y: 859
+    width: 482
+    height: 164
+    borderLeft: 0
+    borderRight: 0
+    borderTop: 0
+    borderBottom: 0
+    paddingLeft: 0
+    paddingRight: 0
+    paddingTop: 0
+    paddingBottom: 0
+  - name: First_screen_quit
+    x: 0
+    y: 511
+    width: 512
+    height: 512
+    borderLeft: 0
+    borderRight: 0
+    borderTop: 0
+    borderBottom: 0
+    paddingLeft: 0
+    paddingRight: 0
+    paddingTop: 0
+    paddingBottom: 0
   - name: Inventory_Avatar_Frame
-    x: 1385
-    y: 1617
+    x: 513
+    y: 755
     width: 314
     height: 268
     borderLeft: 70
@@ -66,9 +144,22 @@ MonoBehaviour:
     paddingRight: 0
     paddingTop: 0
     paddingBottom: 0
+  - name: LevelComplete_Star_2
+    x: 680
+    y: 395
+    width: 198
+    height: 194
+    borderLeft: 0
+    borderRight: 0
+    borderTop: 0
+    borderBottom: 0
+    paddingLeft: 0
+    paddingRight: 0
+    paddingTop: 0
+    paddingBottom: 0
   - name: Loading_Background
-    x: 1025
-    y: 1590
+    x: 0
+    y: 52
     width: 359
     height: 295
     borderLeft: 0
@@ -80,8 +171,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Pagination_Arrow_Left
-    x: 1705
-    y: 1979
+    x: 940
+    y: 19
     width: 49
     height: 69
     borderLeft: 0
@@ -93,8 +184,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Pagination_Arrow_Left_Press_Overlay
-    x: 1753
-    y: 1912
+    x: 561
+    y: 523
     width: 47
     height: 66
     borderLeft: 0
@@ -106,8 +197,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Pagination_Arrow_Right
-    x: 1705
-    y: 1908
+    x: 513
+    y: 519
     width: 47
     height: 70
     borderLeft: 0
@@ -119,8 +210,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Pagination_Arrow_Right_Press_Overlay
-    x: 1700
-    y: 1734
+    x: 1124
+    y: 405
     width: 45
     height: 67
     borderLeft: 0
@@ -132,8 +223,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Slider_Background
-    x: 1385
-    y: 1595
+    x: 680
+    y: 348
     width: 256
     height: 21
     borderLeft: 0
@@ -145,8 +236,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Slider_Foreground
-    x: 1698
-    y: 1335
+    x: 680
+    y: 380
     width: 128
     height: 14
     borderLeft: 0
@@ -158,8 +249,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Slider_Thumb
-    x: 1700
-    y: 1802
+    x: 869
+    y: 5
     width: 70
     height: 83
     borderLeft: 0
@@ -171,8 +262,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Slider_Thumb_Press_Overlay
-    x: 1700
-    y: 1675
+    x: 1143
+    y: 346
     width: 44
     height: 58
     borderLeft: 8
@@ -184,34 +275,34 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Text_Field_Background
-    x: 1025
-    y: 1458
+    x: 360
+    y: 216
     width: 676
     height: 131
-    borderLeft: 0
-    borderRight: 0
-    borderTop: 0
-    borderBottom: 0
+    borderLeft: 27
+    borderRight: 27
+    borderTop: 27
+    borderBottom: 27
     paddingLeft: 0
     paddingRight: 0
     paddingTop: 0
     paddingBottom: 0
   - name: Text_Field_Focus_Overlay
-    x: 1025
-    y: 1331
+    x: 360
+    y: 89
     width: 672
     height: 126
-    borderLeft: 0
-    borderRight: 0
-    borderTop: 0
-    borderBottom: 0
+    borderLeft: 27
+    borderRight: 27
+    borderTop: 27
+    borderBottom: 27
     paddingLeft: 0
     paddingRight: 0
     paddingTop: 0
     paddingBottom: 0
   - name: Text_Field_Icon_User
-    x: 1700
-    y: 1636
+    x: 990
+    y: 50
     width: 40
     height: 38
     borderLeft: 0
@@ -223,8 +314,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: UnitFrame_Background
-    x: 1025
-    y: 1886
+    x: 0
+    y: 348
     width: 679
     height: 162
     borderLeft: 0
@@ -236,8 +327,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: UnitFrame_Fill_Health
-    x: 1025
-    y: 1264
+    x: 828
+    y: 792
     width: 508
     height: 66
     borderLeft: 0
@@ -249,8 +340,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: UnitFrame_Fill_Power
-    x: 1534
-    y: 1264
+    x: 360
+    y: 22
     width: 508
     height: 66
     borderLeft: 0
@@ -275,8 +366,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Window_Close_Button
-    x: 1698
-    y: 1350
+    x: 1037
+    y: 262
     width: 105
     height: 107
     borderLeft: 0
@@ -288,8 +379,8 @@ MonoBehaviour:
     paddingTop: 0
     paddingBottom: 0
   - name: Window_Close_Button_Press_Overlay
-    x: 1755
-    y: 1990
+    x: 609
+    y: 531
     width: 52
     height: 58
     borderLeft: 0

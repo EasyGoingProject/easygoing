@@ -7,4 +7,5 @@ public struct PlayerState
     public bool isAttacking;
 
     public float currentHealth;
+    public float maxHealth;
 }

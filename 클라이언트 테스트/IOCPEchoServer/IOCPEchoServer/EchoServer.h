@@ -12,6 +12,7 @@ typedef struct
 	DWORD clientNum;
 	char characterNum[3];
 	char clientName[20];
+	char ready[1];
 } CLIENT_DATA, *LP_CLIENT_DATA;
 
 

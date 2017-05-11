@@ -18,5 +18,7 @@ MonoBehaviour:
     itemType: 1
   - itemName: "\uD65C"
     itemType: 2
-  - itemName: "\uB3CC"
+  - itemName: "\uB3CC\uB3C4\uB07C"
+    itemType: 3
+  - itemName: "\uB3CC\uB3C4\uB07C"
     itemType: 3

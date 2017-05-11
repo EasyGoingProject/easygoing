@@ -14,6 +14,10 @@ public class PlayerControl : MonoBehaviour
     // 캐릭터 데이터베이스에서 가져올 Data를 할당할 변수
     private CharacterData characterData;
 
+    public GameObject[] characterObjs;
+    private GameObject currentCharacterObj;
+    private PlayerItemSet itemSet;
+
     public PlayerState playerState;
     public ClientData clientData;
     
@@ -22,17 +26,17 @@ public class PlayerControl : MonoBehaviour
     private PlayerAnimator playerAnimator;
     private PlayerAttack playerAttack;
     private PlayerInfo playerInfo;
+    private PlayerLobbyInfo playerLobbyInfo;
     [HideInInspector]
     public NetworkSyncTransform netSyncTrans;
     [HideInInspector]
     public NetworkSyncAnimator netSyncAnimator;
 
+    private bool isActionDie = false;
+
 
     void Awake()
     {
-        // 캐릭터 데이터 할당
-        characterData = characterDB.Get(characterType);
-
         // 하위 컴포넌트들 할당
         playerTransform = GetComponent<PlayerTransform>();
         playerAnimator = GetComponent<PlayerAnimator>();
@@ -46,19 +50,41 @@ public class PlayerControl : MonoBehaviour
     {
         clientData = _clientData;
 
+        characterType = clientData.characterType;
+        for(int i = 0; i < characterObjs.Length; i++)
+        {
+            if (i == (int)characterType)
+            {
+                characterObjs[i].SetActive(true);
+                currentCharacterObj = characterObjs[i];
+            }
+            else
+                characterObjs[i].SetActive(false);
+        }
+        Animator characterAnim = currentCharacterObj.GetComponent<Animator>();
+        itemSet = currentCharacterObj.GetComponent<PlayerItemSet>();
+        itemSet.ActiveWeapon(WeaponType.HAND);
+
+        // 캐릭터 데이터 할당
+        characterData = characterDB.Get(characterType);
+
         // 하위 컴포넌트들 초기화
         playerTransform.InitTransform(characterData);
-        playerAnimator.InitAnimator();
+        playerAnimator.InitAnimator(characterAnim);
         playerAttack.InitAttack(characterData.power);
 
+        playerState.maxHealth = characterData.health;
         playerState.currentHealth = characterData.health;
         playerState.isAttacking = false;
         playerState.isLive = true;
 
-        playerInfo = UIManager.GetInstance.AddPlayerInfo(characterData, _clientData);
+        playerInfo = UIManager.GetInstance.AddPlayerInfo(characterData, clientData);
+        playerLobbyInfo = UIManager.GetInstance.AddPlayerLobbyInfo(clientData);
 
         netSyncTrans.isLocalPlayer = clientData.isLocalPlayer;
         netSyncAnimator.Init(playerAnimator.GetAnimator(), clientData.clientNumber, clientData.isLocalPlayer);
+
+        isActionDie = false;
 
         //gameObject.layer = clientData.isLocalPlayer ? LayerMask.NameToLayer(GlobalData.LAYER_PLAYER) : LayerMask.NameToLayer(GlobalData.LAYER_ENEMY);
         //gameObject.tag = clientData.isLocalPlayer ? GlobalData.TAG_PLAYER : GlobalData.TAG_ENEMY;
@@ -68,6 +94,15 @@ public class PlayerControl : MonoBehaviour
 
     void Update()
     {
+        if (isActionDie)
+        {
+            isActionDie = false;
+            Die();
+        }
+
+        if (GameManager.gameState != GameState.Playing)
+            return;
+
         if (!playerState.isLive || !clientData.isLocalPlayer)
             return;
 
@@ -105,18 +140,59 @@ public class PlayerControl : MonoBehaviour
 
     public void LossHealth(float amount)
     {
-        playerState.currentHealth = Mathf.Clamp(playerState.currentHealth - amount, 0, playerState.currentHealth);
+        playerState.currentHealth = Mathf.Clamp(playerState.currentHealth - amount, 0, playerState.maxHealth);
         playerState.isLive = playerState.currentHealth > 0;
 
         playerInfo.SetHealth(playerState.currentHealth / characterData.health);
 
         if (!playerState.isLive && clientData.isLocalPlayer)
-            Die();
+        {
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = IOCPManager.senderId,
+                sendType = SendType.DIE
+            });
+        }
+    }
+
+    public void SetWeapon(WeaponType getWeaponType)
+    {
+        playerAttack.GetWeapon(getWeaponType);
+        itemSet.ActiveWeapon(getWeaponType);
+    }
+
+    public void AddHealth(float amount)
+    {
+        playerState.currentHealth = Mathf.Clamp(playerState.currentHealth + amount, 0, playerState.maxHealth);
+        playerInfo.SetHealth(playerState.currentHealth / characterData.health);
+    }
+
+    public void DoActionDie()
+    {
+        isActionDie = true;
     }
 
     private void Die()
     {
+        playerInfo.SetDie();
+
         playerAnimator.DieAnimation();
         netSyncAnimator.DieAnimation();
+    }
+
+    public bool IsPlayerReady
+    {
+        get { return playerLobbyInfo.isReady; }
+    }
+
+    public void PlayerReady()
+    {
+        playerLobbyInfo.ClientReady();
+    }
+
+    public void AllPlayerReady(bool isAllReady)
+    {
+        if (clientData.isLocalPlayer)
+            playerLobbyInfo.AllReady(isAllReady);
     }
 }

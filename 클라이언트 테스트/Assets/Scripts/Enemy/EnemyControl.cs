@@ -13,20 +13,28 @@ public class EnemyControl : MonoBehaviour
 
     private Transform enemyBodyTrans;
 
+    [HideInInspector]
+    public NetworkSyncTransform netSyncTrans;
+    [HideInInspector]
+    public NetworkSyncAnimator netSyncAnimator;
+
     [Header("[ Enemy State ]")]
     public EnemyState enemyState = EnemyState.NONE;
     public bool isLive = false;
     public float currentHealth = .0f;
 
+    private bool isLocalPlayer = false;
 
-    void Start()
-    {
-        Init();
-    }
-
-    void Init()
+    public void Init(bool isLocal, int targetId)
     {
         enemyBodyTrans = transform;
+        isLocalPlayer = isLocal;
+
+        netSyncTrans = GetComponent<NetworkSyncTransform>();
+        netSyncAnimator = GetComponent<NetworkSyncAnimator>();
+
+        netSyncTrans.isLocalPlayer = isLocalPlayer;
+        netSyncAnimator.Init(enemyAnimator, targetId, isLocalPlayer);
 
         InitEnemyData();
 
@@ -38,7 +46,7 @@ public class EnemyControl : MonoBehaviour
 
     void Update()
     {
-        if (!isLive)
+        if (!isLive || !isLocalPlayer)
             return;
 
         UpdateTrackingPlayer();
@@ -162,14 +170,17 @@ public class EnemyControl : MonoBehaviour
     {
         string attackAnimatorTrigger = GlobalData.GetAttackTrigger(enemyData.weaponType);
         enemyAnimator.SetTrigger(attackAnimatorTrigger);
+        netSyncAnimator.AttackAnimation(WeaponType.HAND);
 
         yield return new WaitForSeconds(enemyData.attackActiveDelay);
 
-        GameObject attackObj = Instantiate(enemyData.attackObject, attackPoint.position, attackPoint.rotation) as GameObject;
-        attackObj.GetComponent<EnemyAttackObject>().SetAttack(
-            enemyData.attackActiveDuration,
-            enemyData.attackObjectSpeed,
-            enemyData.power);
+        GameManager.GetInstance.SendEnemyAttack(enemyType, attackPoint);
+
+        //GameObject attackObj = Instantiate(enemyData.attackObject, attackPoint.position, attackPoint.rotation) as GameObject;
+        //attackObj.GetComponent<EnemyAttackObject>().SetAttack(
+        //    enemyData.attackActiveDuration,
+        //    enemyData.attackObjectSpeed,
+        //    enemyData.power);
     }
 
     #endregion
@@ -197,6 +208,7 @@ public class EnemyControl : MonoBehaviour
     private void DieAnimation()
     {
         enemyAnimator.SetTrigger(GlobalData.TRIGGER_DIE);
+        netSyncAnimator.DieAnimation();
     }
 
     #endregion

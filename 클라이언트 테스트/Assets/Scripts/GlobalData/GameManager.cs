@@ -6,6 +6,10 @@ using UnityStandardAssets.Utility;
 public class GameManager : Singleton<GameManager>
 {
     public static GameState gameState = GameState.NoConnect;
+    public static ResultState resultState = ResultState.Win;
+    public static int KillCount = 0;
+    private bool gameEndTrigger = false;
+
     private float itemZoneSize = 8.0f;
     private float itemZoneHeight = 20.0f;
     private float enemyZoneSize = 7.0f;
@@ -77,6 +81,12 @@ public class GameManager : Singleton<GameManager>
         if (IOCPManager.GetInstance.client != null
             && IOCPManager.GetInstance.client.connectState == TCPClient.ConnectionState.Connected)
         {
+            if (gameEndTrigger)
+            {
+                gameEndTrigger = false;
+                UIManager.GetInstance.ShowPanel(PanelType.Result);
+            }
+
             if (IOCPManager.clientDataList.FindAll(x => !x.isSpawned).Count > 0)
             {
                 nonRespawnedClientList = IOCPManager.clientDataList.FindAll(x => !x.isSpawned);
@@ -169,6 +179,9 @@ public class GameManager : Singleton<GameManager>
 
     public void RespawnCharacter(ClientData clientData)
     {
+        if (IOCPManager.clientControlList.ContainsKey(clientData.clientNumber))
+            return;
+
         GameObject playerObj = Instantiate(
             playerObjPrefab,
             respawnPoints[clientData.clientIndex].position,
@@ -187,6 +200,38 @@ public class GameManager : Singleton<GameManager>
 
         clientData.isDie = false;
         clientData.isSpawned = true;
+    }
+
+    #endregion
+
+
+    #region [ Player Connection Control ]
+
+    public void CheckGameState()
+    {
+        if (gameState != GameState.Playing)
+            return;
+
+        int liver = 0;
+
+        foreach(KeyValuePair<int, PlayerControl> keyval in IOCPManager.clientControlList)
+        {
+            if (!keyval.Value.isActionDie && keyval.Value.playerState.isLive)
+                liver++;
+        }
+
+        if (!IOCPManager.myPlayerControl.playerState.isLive)
+        {
+            gameState = GameState.Result;
+            resultState = ResultState.Lose;
+            gameEndTrigger = true;
+        }
+        else if(liver < 2)
+        {
+            gameState = GameState.Result;
+            resultState = ResultState.Win;
+            gameEndTrigger = true;
+        }
     }
 
     #endregion
@@ -330,16 +375,19 @@ public class GameManager : Singleton<GameManager>
     public EnemyDatabase enemyDB;
     public GameObject[] enemyObjPrefab;
     public Dictionary<int, EnemyControl> networkEnemyList = new Dictionary<int, EnemyControl>();
+    private List<EnemyControl> networkEnemyValueList = new List<EnemyControl>();
 
     private IEnumerator HostSpawnEnemy()
     {
-        float enemyItemTime = 3.0f;// Random.Range(0.0f, 20.0f);
+        float enemyItemTime = Random.Range(0.0f, 10.0f);
 
         while (gameState == GameState.Playing)
         {
             yield return new WaitForSeconds(enemyItemTime);
+            enemyItemTime = Random.Range(20.0f, 30.0f);
 
-            enemyItemTime = 30.0f;// Random.Range(5.0f, 20.0f);
+            while (networkEnemyValueList.FindAll(x => x.isLive).Count > 4)
+                yield return null;
 
             CreateRandomEnemy();
         }
@@ -390,6 +438,7 @@ public class GameManager : Singleton<GameManager>
         enemyObj.GetComponent<NetworkSyncTransform>().SetObject(enemyData.targetId, IOCPManager.connectionData.isHost);
 
         networkEnemyList.Add(enemyData.targetId, enemyObj.GetComponent<EnemyControl>());
+        networkEnemyValueList.Add(enemyObj.GetComponent<EnemyControl>());
     }
 
     #endregion
@@ -442,7 +491,7 @@ public class GameManager : Singleton<GameManager>
         attackObj.GetComponent<EnemyAttackObject>().SetAttack(
             enemyData.attackActiveDuration,
             enemyData.attackObjectSpeed,
-            attackData.power);
+            enemyData.power);
 
         networkObjectList.Add(attackData.targetId, attackObj.GetComponent<NetworkSyncTransform>());
     }
@@ -500,4 +549,11 @@ public enum GameState
     Lobby,
     Playing,
     Result
+}
+
+
+public enum ResultState
+{
+    Win = 0,
+    Lose
 }

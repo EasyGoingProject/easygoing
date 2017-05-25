@@ -24,11 +24,15 @@ public class EnemyControl : MonoBehaviour
     public float currentHealth = .0f;
 
     private bool isLocalPlayer = false;
+    private bool isActionDie = false;
+
+    public int enemyID = 0;
 
     public void Init(bool isLocal, int targetId)
     {
         enemyBodyTrans = transform;
         isLocalPlayer = isLocal;
+        enemyID = targetId;
 
         netSyncTrans = GetComponent<NetworkSyncTransform>();
         netSyncAnimator = GetComponent<NetworkSyncAnimator>();
@@ -46,14 +50,26 @@ public class EnemyControl : MonoBehaviour
 
     void Update()
     {
+        if (isActionDie)
+        {
+            isActionDie = false;
+            Die();
+        }
+
+        UpdateHUDText();
+
         if (!isLive || !isLocalPlayer)
             return;
 
-        UpdateTrackingPlayer();
-        UpdateRotation();
-        UpdateAttackTimer();
+        FindPlayer();
+
+        if (currentTarget)
+        {
+            UpdateTrackingPlayer();
+            UpdateRotation();
+            UpdateAttackTimer();
+        }
         UpdateAnimator();
-        UpdateHUDText();
     }
 
 
@@ -73,15 +89,31 @@ public class EnemyControl : MonoBehaviour
     {
         currentHealth = enemyData.health;
         isLive = true;
+        isActionDie = false;
     }
 
     public void LossHealth(float amount)
     {
-        currentHealth = Mathf.Clamp(currentHealth - amount, 0, currentHealth);
-        isLive = !(currentHealth == 0);
-
         if (!isLive)
-            Die();
+            return;
+
+        currentHealth = Mathf.Clamp(currentHealth - amount, 0, currentHealth);
+        isLive = currentHealth > 0;
+
+        if (!isLive && isLocalPlayer)
+        {
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = IOCPManager.senderId,
+                targetId = enemyID,
+                sendType = SendType.ENEMY_DIE
+            });
+        }
+    }
+
+    public void DoActionDie()
+    {
+        isActionDie = true;
     }
 
     private void Die()
@@ -101,18 +133,38 @@ public class EnemyControl : MonoBehaviour
     private NavMeshAgent navMesh;
     private Transform currentTarget;
     private float distanceWithTarget;
-    
-    
+    private PlayerControl[] players;
+    private float tempDistanceWithTarget;
+    private float tempDistanceWithTarget2;
+
     private void InitNavMesh()
     {
         navMesh = GetComponent<NavMeshAgent>();
         navMesh.speed = enemyData.moveSpeed;
         navMesh.stoppingDistance = enemyData.range;
-
-        currentTarget = GameObject.FindObjectOfType<PlayerControl>().transform;
+        players = FindObjectsOfType<PlayerControl>();
     }
 
     //가까운 플레이어 검색하여 타게팅하기
+    private void FindPlayer()
+    {
+        currentTarget = null;
+        tempDistanceWithTarget = 100.0f;
+
+        for (int i =0; i < players.Length; i++)
+        {
+            if(players[i].playerState.isLive)
+            {
+                tempDistanceWithTarget2 = Vector3.Distance(enemyBodyTrans.position, players[i].transform.position);
+                if(tempDistanceWithTarget2 < tempDistanceWithTarget)
+                {
+                    tempDistanceWithTarget = tempDistanceWithTarget2;
+                    currentTarget = players[i].transform;
+                }
+            }
+        }
+    }
+
     private void UpdateTrackingPlayer()
     {
         if (!CanMove)

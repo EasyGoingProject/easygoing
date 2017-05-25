@@ -30,6 +30,7 @@ public class UIManager : Singleton<UIManager>
 
     [Header("[Panel Control]")]
     public GameObject[] panelObjs;
+    public GameObject[] panelResults;
     public PanelType currentPanelType;
     private PanelType targetPanelType = PanelType.None;
 
@@ -56,9 +57,14 @@ public class UIManager : Singleton<UIManager>
     {
         currentPanelType = panelType;
 
-        for(int i=0; i< panelObjs.Length - 1; i++)
-        {
+        for (int i = 0; i < panelObjs.Length; i++)
             panelObjs[i].SetActive(i == (int)panelType);
+
+        if(panelType == PanelType.Result)
+        {
+            panelObjs[(int)PanelType.Play].SetActive(true);
+            panelResults[0].SetActive(GameManager.resultState == ResultState.Win);
+            panelResults[1].SetActive(GameManager.resultState == ResultState.Lose);
         }
     }
 
@@ -140,8 +146,8 @@ public class UIManager : Singleton<UIManager>
 public enum PanelType
 {
     Connection = 0,
-    Lobby,
-    Play,
-    Result,
+    Lobby = 1,
+    Play = 2,
+    Result = 3,
     None
 }

@@ -136,7 +136,16 @@ public enum ItemType
 // 적 타입
 public enum EnemyType
 {
-    NATIVECHASER
+    NATIVECHASER = 0,
+    FRANKEN,
+    DEVIL,
+    ARMORZOMBIE,
+    MUMMY,
+    HUNTERFROG,
+    SKELETON,
+    BUTCHER,
+    FUNKZOMBIE,
+    EVILBEAR
 }
 
 

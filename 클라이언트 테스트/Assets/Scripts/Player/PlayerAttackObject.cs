@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class PlayerAttackObject : MonoBehaviour
 {
@@ -42,11 +41,6 @@ public class PlayerAttackObject : MonoBehaviour
 
         if (lifeTimer > duration)
             Dispose();
-
-        //if (isNonMove)
-        //    return;
-
-        //attackTrans.Translate(attackTrans.forward * Time.deltaTime * speed, Space.Self);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -54,7 +48,6 @@ public class PlayerAttackObject : MonoBehaviour
         if (isHit || !IOCPManager.connectionData.isHost)
             return;
 
-        //col.gameObject.CompareTag(GlobalData.TAG_ENEMY)
         if (other.gameObject.CompareTag(GlobalData.TAG_PLAYER))
         {
             PlayerControl pControl = other.gameObject.GetComponent<PlayerControl>();
@@ -68,6 +61,24 @@ public class PlayerAttackObject : MonoBehaviour
                 senderId = IOCPManager.senderId,
                 sendType = SendType.HIT,
                 targetId = pControl.clientData.clientNumber,
+                power = damage,
+            });
+
+            Dispose();
+        }
+        else if (other.gameObject.CompareTag(GlobalData.TAG_ENEMY))
+        {
+            EnemyControl eControl = other.gameObject.GetComponent<EnemyControl>();
+            if (eControl == null)
+                return;
+
+            isHit = true;
+
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = IOCPManager.senderId,
+                sendType = SendType.ENEMY_HIT,
+                targetId = eControl.enemyID,
                 power = damage,
             });
 

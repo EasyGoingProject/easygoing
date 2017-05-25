@@ -32,7 +32,7 @@ public class PlayerControl : MonoBehaviour
     [HideInInspector]
     public NetworkSyncAnimator netSyncAnimator;
 
-    private bool isActionDie = false;
+    public bool isActionDie = false;
 
 
     void Awake()
@@ -140,6 +140,9 @@ public class PlayerControl : MonoBehaviour
 
     public void LossHealth(float amount)
     {
+        if (!playerState.isLive)
+            return;
+
         playerState.currentHealth = Mathf.Clamp(playerState.currentHealth - amount, 0, playerState.maxHealth);
         playerState.isLive = playerState.currentHealth > 0;
 

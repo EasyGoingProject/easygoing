@@ -7,6 +7,7 @@ public class EnemyAttackObject : MonoBehaviour
     private float damage;
 
     private Transform attackTrans;
+    private Rigidbody attackRigid;
     private bool isNonMove = false;
     private bool isHit = false;
 
@@ -21,6 +22,12 @@ public class EnemyAttackObject : MonoBehaviour
         damage = _damage;
 
         isNonMove = !(speed > 0);
+
+        if (!isNonMove)
+        {
+            Vector3 attackDirect = attackTrans.forward;
+            attackRigid.AddForce(attackDirect * speed, ForceMode.Impulse);
+        }
     }
 
     void Update()
@@ -29,21 +36,16 @@ public class EnemyAttackObject : MonoBehaviour
 
         if (lifeTimer > duration)
             Dispose();
-
-        if (isNonMove)
-            return;
-
-        attackTrans.Translate(attackTrans.forward * Time.deltaTime * speed, Space.Self);
     }
 
-    private void OnCollisionEnter(Collision col)
+    private void OnTriggerEnter(Collider other)
     {
-        if (isHit)
+        if (isHit || !IOCPManager.connectionData.isHost)
             return;
 
-        if (col.gameObject.CompareTag(GlobalData.TAG_PLAYER))
+        if (other.gameObject.CompareTag(GlobalData.TAG_PLAYER))
         {
-            PlayerControl pControl = col.gameObject.GetComponent<PlayerControl>();
+            PlayerControl pControl = other.gameObject.GetComponent<PlayerControl>();
             if (pControl == null)
                 return;
 

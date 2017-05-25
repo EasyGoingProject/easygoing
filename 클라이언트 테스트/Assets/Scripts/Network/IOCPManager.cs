@@ -175,6 +175,23 @@ public class IOCPManager : Singleton<IOCPManager>
         {
             switch (netData.sendType)
             {
+                #region [ Game Play ]
+
+                case SendType.READY:
+                    clientControlList[netData.senderId].PlayerReady();
+                    AllReadyCheck(true);
+                    break;
+
+                case SendType.GAMESTART:
+                    uiManager.SetTargetPanel(PanelType.Play);
+                    gameManager.GamePlay();
+                    break;
+
+                #endregion
+
+
+                #region [ Players ]
+
                 case SendType.SYNCTRANSFORM:
                     clientControlList[netData.senderId].netSyncTrans.SetTransform(netData.position, netData.rotation);
                     break;
@@ -195,23 +212,19 @@ public class IOCPManager : Singleton<IOCPManager>
                     clientControlList[netData.targetId].LossHealth(netData.power);
                     break;
 
-                case SendType.READY:
-                    clientControlList[netData.senderId].PlayerReady();
-                    AllReadyCheck(true);
-                    break;
-
-                case SendType.GAMESTART:
-                    uiManager.SetTargetPanel(PanelType.Play);
-                    gameManager.GamePlay();
-                    break;
-
                 case SendType.DIE:
                     clientControlList[netData.senderId].DoActionDie();
+                    gameManager.CheckGameState();
                     break;
 
                 case SendType.ADDHEALTH:
                     clientControlList[netData.senderId].AddHealth(GlobalData.ITEM_HEALTH_HEAL_AMOUNT);
                     break;
+
+                #endregion
+
+
+                #region [ Item ]
 
                 case SendType.SPAWN_ITEM:
                     gameManager.itemDataList.Add(netData);
@@ -228,6 +241,11 @@ public class IOCPManager : Singleton<IOCPManager>
                 case SendType.DESTORY_OBJECT:
                     gameManager.removeObjectList.Add(netData);
                     break;
+
+                #endregion
+
+
+                #region [ Enemy ]
 
                 case SendType.SPAWN_ENEMY:
                     gameManager.enemyDataList.Add(netData);
@@ -248,6 +266,16 @@ public class IOCPManager : Singleton<IOCPManager>
                 case SendType.ENEMY_ATTACK:
                     gameManager.enemyAttackDataList.Add(netData);
                     break;
+
+                case SendType.ENEMY_HIT:
+                    gameManager.networkEnemyList[netData.targetId].LossHealth(netData.power);
+                    break;
+
+                case SendType.ENEMY_DIE:
+                    gameManager.networkEnemyList[netData.targetId].DoActionDie();
+                    break;
+
+                #endregion
             }
         }
         catch (Exception e)
@@ -266,11 +294,14 @@ public class IOCPManager : Singleton<IOCPManager>
             if (keyVal.Value.clientData.isHost)
                 hostPlayer = keyVal.Value;
 
+            if (keyVal.Value.clientData.clientNumber == senderId)
+                myPlayerControl = keyVal.Value;
+
             if (!isChecking || !keyVal.Value.IsPlayerReady)
                 isAllReady = false;
         }
 
-        if (hostPlayer != null)
+        if (hostPlayer != null )// && clientControlList.Values.Count > 1)
             hostPlayer.AllPlayerReady(isAllReady);
     }
 
@@ -333,11 +364,13 @@ public class IOCPManager : Singleton<IOCPManager>
 
     public static List<ClientData> clientDataList = new List<ClientData>();
     public static Dictionary<int, PlayerControl> clientControlList = new Dictionary<int, PlayerControl>();
+    public static PlayerControl myPlayerControl;
 
     private void ResetClientDataList()
     {
         clientDataList = new List<ClientData>();
         clientControlList = new Dictionary<int, PlayerControl>();
+        myPlayerControl = null;
     }
 
     private void AddClient(ClientData clientData)

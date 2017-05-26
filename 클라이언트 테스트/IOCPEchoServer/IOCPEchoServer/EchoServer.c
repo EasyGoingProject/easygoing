@@ -174,7 +174,7 @@ void Send_ClientNumber(CLIENT_LIST *clients, LP_CLIENT_DATA clientData) {
 }
 
 void Send_ClientList(CLIENT_LIST *clients) {
-	char buffer[50] = "";
+	char buffer[255] = "";
 	strcat(buffer, "Server-ClientList-");
 
 	printf("Client List Count %d\n", clients->size);
@@ -336,7 +336,7 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 				lpClientData->hClntSock,	//연결 소켓을 가리키는 소켓 지정 번호
 				&(lpIoData->wsaBuf),		//구조체 배열의 포인터, 버퍼크기
 				1,							//구조체의 개수
-				lpIoData->wsaBuf.buf,			//데이터 입력이 완료된 경우, 읽은 데이터의 바이트 크기 output
+				lpIoData->wsaBuf.buf,		//데이터 입력이 완료된 경우, 읽은 데이터의 바이트 크기 output
 				&flags,						//WSARecv 함수의 호출방식
 				&lpIoData->overlapped,		//Overlapped 구조체의 포인터
 				NULL						//데이터 입력이 완료 되었을 때 호출할 완료 루틴
@@ -357,8 +357,8 @@ void ErrorHandling(char *message)
 	fputs(message, stderr);
 	fputc('\n', stderr);
 	exit(1);
-}
 
+}
 char * toArray(int number)
 {
 	int n = log10(number) + 1;

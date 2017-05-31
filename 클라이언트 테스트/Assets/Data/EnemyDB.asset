@@ -15,16 +15,160 @@ MonoBehaviour:
   - enemyName: "\uC6D0\uC8FC\uBBFC\uCD94\uACA9\uC790"
     enemyType: 0
     weaponType: 0
-    moveSpeed: 2.5
+    moveSpeed: 2.13
     rotationSpeed: 2
-    range: 1.8
-    power: 5
-    health: 100
+    range: 1.6
+    power: 3
+    health: 70
     coolTime: 1.5
     attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
       type: 2}
     attackActiveDelay: 0.1
-    attackActiveDuration: 0.1
+    attackActiveDuration: 1
     attackObjectSpeed: 0
     enemyPrefab: {fileID: 1000013321844564, guid: dab4d2287c8b19d48b09d8ee6a032324,
+      type: 2}
+  - enemyName: "\uD504\uB791\uCF04"
+    enemyType: 1
+    weaponType: 0
+    moveSpeed: 1.82
+    rotationSpeed: 2
+    range: 1.5
+    power: 5
+    health: 120
+    coolTime: 4
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000010920900224, guid: 461f53ea637f40945816e1ec16bc6cf6,
+      type: 2}
+  - enemyName: "\uC545\uB9C8"
+    enemyType: 2
+    weaponType: 1
+    moveSpeed: 2.2
+    rotationSpeed: 2
+    range: 1.9
+    power: 3.5
+    health: 80
+    coolTime: 3
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000010832410336, guid: 2cd1f213fd2b1d7439a72491d1ae5c0e,
+      type: 2}
+  - enemyName: "\uC544\uBA38\uC880\uBE44"
+    enemyType: 3
+    weaponType: 0
+    moveSpeed: 1.19
+    rotationSpeed: 1
+    range: 1.6
+    power: 4
+    health: 60
+    coolTime: 1.2
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000012047614404, guid: a2b98f0fe6b20ca48b8079900b68738d,
+      type: 2}
+  - enemyName: "\uBBF8\uC774\uB77C"
+    enemyType: 4
+    weaponType: 1
+    moveSpeed: 1.55
+    rotationSpeed: 2
+    range: 1.8
+    power: 4.5
+    health: 80
+    coolTime: 2.5
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000013097891566, guid: 9f6d40422e6ba8e4e87190167d2b6037,
+      type: 2}
+  - enemyName: "\uC0AC\uB0E5\uAFBC\uAC1C\uAD6C\uB9AC"
+    enemyType: 5
+    weaponType: 1
+    moveSpeed: 2.5
+    rotationSpeed: 2
+    range: 1.8
+    power: 4.5
+    health: 70
+    coolTime: 3.5
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000011736706852, guid: 2febb1bf8b6fa6c4ca5041db188508e2,
+      type: 2}
+  - enemyName: "\uC2A4\uCF08\uB808\uD1A4"
+    enemyType: 6
+    weaponType: 0
+    moveSpeed: 2.1
+    rotationSpeed: 2
+    range: 1.8
+    power: 2.5
+    health: 110
+    coolTime: 2
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000010445545480, guid: 391c38602781344498143e9ef39cfcfe,
+      type: 2}
+  - enemyName: "\uB3C4\uC0B4\uC790"
+    enemyType: 7
+    weaponType: 1
+    moveSpeed: 1.01
+    rotationSpeed: 2
+    range: 1.9
+    power: 5.5
+    health: 130
+    coolTime: 5
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000013278982772, guid: 93316bfbc4fbd2844912baf823adc6ed,
+      type: 2}
+  - enemyName: "\uD391\uD06C\uC880\uBE44"
+    enemyType: 8
+    weaponType: 0
+    moveSpeed: 1.1
+    rotationSpeed: 1
+    range: 1.8
+    power: 3.5
+    health: 70
+    coolTime: 2
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000013821724868, guid: 8454a90aafe8ce34e85fc065b58c837b,
+      type: 2}
+  - enemyName: "\uC774\uBE14\uBCA0\uC5B4"
+    enemyType: 9
+    weaponType: 0
+    moveSpeed: 2.5
+    rotationSpeed: 1.5
+    range: 2
+    power: 6
+    health: 110
+    coolTime: 3.5
+    attackObject: {fileID: 1000012568755798, guid: f0499596c1893374aadf39a08feac867,
+      type: 2}
+    attackActiveDelay: 0.1
+    attackActiveDuration: 1
+    attackObjectSpeed: 0
+    enemyPrefab: {fileID: 1000014029376284, guid: 545696861c7b40946a607d41ee182843,
       type: 2}

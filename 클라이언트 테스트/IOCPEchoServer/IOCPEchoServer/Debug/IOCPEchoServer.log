@@ -1,15 +1,17 @@
 ﻿  EchoServer.c
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(190): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[6]'
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(190): warning C4024: 'sprintf': different types for formal and actual parameter 1
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(191): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[6]'
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(191): warning C4024: 'sprintf': different types for formal and actual parameter 1
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(192): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[20]'
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(192): warning C4024: 'sprintf': different types for formal and actual parameter 1
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(193): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[3]'
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(193): warning C4024: 'sprintf': different types for formal and actual parameter 1
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(313): warning C4133: 'function': incompatible types - from 'CHAR *' to 'LPDWORD'
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(339): warning C4133: 'function': incompatible types - from 'CHAR *' to 'LPDWORD'
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(225): warning C4101: 'serverDataBuf': unreferenced local variable
-d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(364): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(206): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[6]'
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(206): warning C4024: 'sprintf': different types for formal and actual parameter 1
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(207): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[6]'
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(207): warning C4024: 'sprintf': different types for formal and actual parameter 1
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(208): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[20]'
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(208): warning C4024: 'sprintf': different types for formal and actual parameter 1
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(209): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[5]'
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(209): warning C4024: 'sprintf': different types for formal and actual parameter 1
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(210): warning C4047: 'function': 'char *const ' differs in levels of indirection from 'char (*)[3]'
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(210): warning C4024: 'sprintf': different types for formal and actual parameter 1
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(349): warning C4133: 'function': incompatible types - from 'CHAR *' to 'LPDWORD'
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(375): warning C4133: 'function': incompatible types - from 'CHAR *' to 'LPDWORD'
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(246): warning C4101: 'serverDataBuf': unreferenced local variable
+d:\projects\pj_cmong_iocp\iocpmultiplay_sourcetree\echoserver\iocpechoserver\iocpechoserver\echoserver.c(400): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
   IOCPEchoServer.vcxproj -> D:\Projects\PJ_Cmong_IOCP\IOCPMultiplay_SourceTree\EchoServer\IOCPEchoServer\Debug\IOCPEchoServer.exe
   IOCPEchoServer.vcxproj -> D:\Projects\PJ_Cmong_IOCP\IOCPMultiplay_SourceTree\EchoServer\IOCPEchoServer\Debug\IOCPEchoServer.pdb (Full PDB)

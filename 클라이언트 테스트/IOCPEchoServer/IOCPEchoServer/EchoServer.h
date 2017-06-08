@@ -4,18 +4,6 @@
 
 #include <winsock2.h>
 
-//소켓정보 구조체
-typedef struct
-{
-	SOCKET hClntSock;
-	SOCKADDR_IN clntAddr;
-	DWORD clientNum;
-	char characterNum[3];
-	char clientName[20];
-	char ready[1];
-} CLIENT_DATA, *LP_CLIENT_DATA;
-
-
 //소켓 데이터 전송정보 구조체
 typedef struct
 {

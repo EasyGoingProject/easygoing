@@ -14,6 +14,7 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort);
 void ErrorHandling(char *message);
 
 
+ROOM_LIST *roomList;
 CLIENT_LIST *clientList;
 
 
@@ -77,11 +78,15 @@ int main(int argc, char** argv)
 	else
 		printf("클라이언트 대기상태 진입 성공\n");
 
+	// 룸 목록 메모리 할당
+	roomList = (ROOM_LIST*)malloc(sizeof(ROOM_LIST));
+	// 룸 리스트 초기화
+	RoomListInit(roomList);
+
 	//클라이언트 목록 메모리할당
 	clientList = (CLIENT_LIST*)malloc(sizeof(CLIENT_LIST));
-
 	//클라이언트 목록 초기화
-	ListInit(clientList);
+	ClientListInit(clientList, 0);
 
 
 	printf("==> IOCP 서버 준비 완료\n\n");
@@ -92,7 +97,8 @@ int main(int argc, char** argv)
 		SOCKET hClntSock;
 		SOCKADDR_IN clntAddr;
 		int addrLen = sizeof(clntAddr);
-
+		int isReady = 0;
+		int readyLen = sizeof(isReady);
 
 		//클라이언트 접근시 연결 수락
 		hClntSock = accept(hServSock, (SOCKADDR*)&clntAddr, &addrLen);
@@ -111,15 +117,20 @@ int main(int argc, char** argv)
 		lpClientData->hClntSock = hClntSock;
 		lpClientData->clientNum = clientIndex;
 		memcpy(&(lpClientData->clntAddr), &clntAddr, addrLen);
+		memcpy(&(lpClientData->ready), &isReady, readyLen);
 
 		clientIndex++;
 
 		//클라이언트 목록에 추가
-		AddToClientList(*lpClientData, clientList);
+		if (!IsClientFull(clientList)) {
+			AddToClientList(*lpClientData, clientList);
+		}
+		else
+		{
+			printf("\n[ Full Room ]\n");
+		}
 
 		Send_ClientNumber(clientList, lpClientData);
-		//Send_HostNumber(clientList);
-		//Send_ClientList(clientList);
 
 		printf("\n[접속중 플레이어 현황]\n");
 
@@ -129,8 +140,6 @@ int main(int argc, char** argv)
 				inet_ntoa(clientList->connectionList[i].clntAddr.sin_addr),
 				ntohs(clientList->connectionList[i].clntAddr.sin_port));
 		}
-
-		
 
 		printf("\n");
 
@@ -178,24 +187,38 @@ void Send_ClientList(CLIENT_LIST *clients) {
 	strcat(buffer, "Server-ClientList-");
 
 	printf("Client List Count %d\n", clients->size);
-
+	
 	for (int i = 0; i < clients->size; i++) {
+
 		CLIENT_DATA client = clients->connectionList[i];
+
+		printf("Client-%d : %d : [%d]\n", 
+			i, 
+			client.clientNum,
+			ntohs(client.clntAddr.sin_port));
 		
 		char clientIndexStr[6];
 		char clientNumberStr[6];
 		char clientNameStr[20];
-		char clientCharacterStr[3];
+		char clientCharacterStr[5];
+		char clientReady[3];
 
-		sprintf(&clientIndexStr, "%d=", (clients->size -1 - i));
-		sprintf(&clientNumberStr, "%d=", client.clientNum);
-		sprintf(&clientNameStr, "%s=", client.clientName);
-		sprintf(&clientCharacterStr, "%s,", client.characterNum);
-
+		sprintf(&clientIndexStr, "%d", i);
+		sprintf(&clientNumberStr, "%d", client.clientNum);
+		sprintf(&clientNameStr, "%s", client.clientName);
+		sprintf(&clientCharacterStr, "%s", client.characterNum);
+		sprintf(&clientReady, "%d", client.ready);
+		
 		strcat(buffer, clientIndexStr);
+		strcat(buffer, "=");
 		strcat(buffer, clientNumberStr);
+		strcat(buffer, "=");
 		strcat(buffer, clientNameStr);
+		strcat(buffer, "=");
 		strcat(buffer, clientCharacterStr);
+		strcat(buffer, "=");
+		strcat(buffer, clientReady);
+		strcat(buffer, ",");
 	}
 
 	printf(buffer);
@@ -205,8 +228,6 @@ void Send_ClientList(CLIENT_LIST *clients) {
 		int sendBytes = send(clients->connectionList[i].hClntSock, buffer, sizeof(buffer), 0);
 	}
 }
-
-
 
 //입출력을 담당하는 쓰레드의 행동 정의
 unsigned int __stdcall CompletionThread(LPVOID pComPort)
@@ -238,12 +259,13 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 		{
 			printf("Error - GetQueuedCompletionStatus\n");
 
+			RemoveAtClientList(lpClientData->clientNum, clientList);
+
 			closesocket(lpClientData->hClntSock);
 			free(lpClientData);
 			free(lpIoData);
 
-			RemoveAtClientList(clientList);
-
+			
 			Send_ClientList(clientList);
 
 			return 1;
@@ -256,11 +278,11 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 				inet_ntoa(lpClientData->clntAddr.sin_addr),
 				ntohs(lpClientData->clntAddr.sin_port));
 
+			RemoveAtClientList(lpClientData->clientNum, clientList);
+
 			closesocket(lpClientData->hClntSock);
 			free(lpClientData);
 			free(lpIoData);
-
-			RemoveAtClientList(clientList);
 
 			Send_ClientList(clientList);
 
@@ -268,18 +290,12 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 		}
 		else {
 			//입력 받은 데이터 처리
-			/*printf("[클라이언트 %d - %s:%d]에서 전송 : %s\n",
-				lpClientData->clientNum,
-				inet_ntoa(lpClientData->clntAddr.sin_addr),
-				ntohs(lpClientData->clntAddr.sin_port),
-				lpIoData->wsaBuf.buf);*/
-
 			if (strstr(lpIoData->wsaBuf.buf, "Client") != NULL) {
 				if (strstr(lpIoData->wsaBuf.buf, "Connected") != NULL) {
 					char *ptr = strtok(lpIoData->wsaBuf.buf, ",");
 
 					int ptrIndex = 0;
-					char *ptrArray[3];
+					char *ptrArray[5];
 
 					while (ptr != NULL)
 					{
@@ -287,14 +303,34 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 						ptr = strtok(NULL, ",");
 					}
 
-					printf("Connected:%s-%s-%s\n", ptrArray[1], ptrArray[2], ptrArray[3]);
+					printf("Connected:%s-%s-%s-%s\n", ptrArray[1], ptrArray[2], ptrArray[3], ptrArray[4]);
 					
-					SetClient(clientList, atoi(ptrArray[1]), ptrArray[2], ptrArray[3]);
+					SetClient(clientList, atoi(ptrArray[1]), ptrArray[2], ptrArray[3], atoi(ptrArray[4]));
+
+					Send_ClientList(clientList);
+				}
+				if (strstr(lpIoData->wsaBuf.buf, "Ready") != NULL) {
+					char *ptr = strtok(lpIoData->wsaBuf.buf, ",");
+
+					int ptrIndex = 0;
+					char *ptrArray2[4];
+
+					while (ptr != NULL)
+					{
+						ptrArray2[ptrIndex++] = ptr;
+						ptr = strtok(NULL, ",");
+					}
+
+					printf("Ready:%s-%s\n", ptrArray2[1], ptrArray2[2]);
+
+					SetClientReady(clientList, atoi(ptrArray2[1]), atoi(ptrArray2[2]));
 
 					Send_ClientList(clientList);
 				}
 			}
 			else {
+
+
 				//입력받은 데이터를 클라이언트로 전송 (에코)
 				lpIoData->wsaBuf.len = BytesTransferred;
 
@@ -350,7 +386,6 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 	return 0;
 }
 
-
 //오류 처리 : 오류 메시지 출력 후 종료
 void ErrorHandling(char *message)
 {
@@ -359,6 +394,7 @@ void ErrorHandling(char *message)
 	exit(1);
 
 }
+
 char * toArray(int number)
 {
 	int n = log10(number) + 1;
@@ -370,4 +406,3 @@ char * toArray(int number)
 	}
 	return numberArray;
 }
-

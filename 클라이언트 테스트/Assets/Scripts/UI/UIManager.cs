@@ -104,6 +104,20 @@ public class UIManager : Singleton<UIManager>
         return playerLobbyInfos[clientData.clientIndex];
     }
 
+    public void RemovePlayerInfos()
+    {
+        PlayerInfo[] playerInfos = gridPlayerInfo.GetComponentsInChildren<PlayerInfo>();
+        for (int i = 0; i < playerInfos.Length; i++)
+            DestroyImmediate(playerInfos[i].gameObject);
+
+        gridPlayerInfo.Reposition();
+    }
+
+    public void RemovePlayerLobbyInfo(ClientData clientData)
+    {
+        NGUITools.SetActive(playerLobbyInfos[clientData.clientIndex].gameObject, false);
+    }
+
     #endregion
 
 

@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using System.Text;
 using System.Net.Sockets;
+using System.Collections;
 
 public class TCPClient : MonoBehaviour
 {
@@ -41,9 +42,12 @@ public class TCPClient : MonoBehaviour
         serverAddress = iocpManager.serverAddress;
         serverPort = iocpManager.serverPort;
 
-        clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        Environment.SetEnvironmentVariable("MONO_REFLECTION_SERIALIZER", "yes");
+
         try
         {
+            clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
             IAsyncResult result = clientSocket.BeginConnect(serverAddress, serverPort, EndConnect, null);
             bool connectSuccess = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(10));
             if (!connectSuccess)
@@ -61,15 +65,22 @@ public class TCPClient : MonoBehaviour
 
     private void EndConnect(IAsyncResult iar)
     {
-        clientSocket.EndConnect(iar);
-        clientSocket.NoDelay = true;
-        connectState = ConnectionState.SetClient;
+        if (clientSocket.Connected)
+        {
+            clientSocket.EndConnect(iar);
+            clientSocket.NoDelay = true;
+            connectState = ConnectionState.SetClient;
 
 #if DEBUGGING
         Debug.Log("Client connected");
 #endif
 
-        BeginReceiveData();
+            BeginReceiveData();
+        }
+        else
+        {
+            iocpManager.ConnectFailed();
+        }
     }
 
     #endregion
@@ -77,13 +88,18 @@ public class TCPClient : MonoBehaviour
 
     #region [ Disconnect ] 
 
-    private void OnDestroy()
+    public void Disconnect()
     {
         if (clientSocket != null)
         {
             clientSocket.Close();
             clientSocket = null;
         }
+    }
+
+    private void OnDestroy()
+    {
+        Disconnect();
     }
 
     #endregion
@@ -141,9 +157,10 @@ public class TCPClient : MonoBehaviour
             catch (Exception e)
             {
                 Debug.Log("Server message getted failed. " + e.Message);
+                Debug.Log("Error " + serverMessage);
             }
         }
-        else if (!string.IsNullOrEmpty(serverMessage))
+        else if (!string.IsNullOrEmpty(serverMessage) && serverMessage.Length > 5)
         {
             try
             {
@@ -168,7 +185,16 @@ public class TCPClient : MonoBehaviour
                         "Connected", ",",
                         IOCPManager.senderId, ",",
                         iocpManager.playerName, ",",
-                        (int)iocpManager.characterType, ","));
+                        (int)iocpManager.characterType, ",",
+                        "0", ","));
+    }
+
+    public void SendClientReady(bool isReady)
+    {
+        SendClientData(string.Concat(
+                        "Ready", ",",
+                        IOCPManager.senderId, ",",
+                        isReady ? "1" : "0", ","));
     }
 
     public void SendClientData(string message)

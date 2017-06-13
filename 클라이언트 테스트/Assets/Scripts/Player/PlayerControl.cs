@@ -33,6 +33,7 @@ public class PlayerControl : MonoBehaviour
     public NetworkSyncAnimator netSyncAnimator;
 
     public bool isActionDie = false;
+    public bool isActionDisconnect = false;
 
 
     void Awake()
@@ -92,12 +93,24 @@ public class PlayerControl : MonoBehaviour
         // ----- //
     }
 
+    public void UpdateClientData(ClientData _clientData)
+    {
+        playerInfo.UpdatePlayerInfo(_clientData);
+        playerLobbyInfo.UpdateLobbyInfo(_clientData);
+    }
+
     void Update()
     {
         if (isActionDie)
         {
             isActionDie = false;
             Die();
+        }
+
+        if (isActionDisconnect)
+        {
+            isActionDisconnect = false;
+            Disconnect();
         }
 
         if (GameManager.gameState != GameState.Playing)
@@ -152,7 +165,7 @@ public class PlayerControl : MonoBehaviour
         {
             IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
             {
-                senderId = IOCPManager.senderId,
+                senderId = clientData.clientNumber,
                 sendType = SendType.DIE
             });
         }
@@ -177,7 +190,7 @@ public class PlayerControl : MonoBehaviour
 
     private void Die()
     {
-        playerInfo.SetDie();
+        playerInfo.SetDie(); 
 
         playerAnimator.DieAnimation();
         netSyncAnimator.DieAnimation();
@@ -185,7 +198,7 @@ public class PlayerControl : MonoBehaviour
 
     public bool IsPlayerReady
     {
-        get { return playerLobbyInfo.isReady; }
+        get { return playerLobbyInfo.clientData.isReady; }
     }
 
     public void PlayerReady()
@@ -197,5 +210,37 @@ public class PlayerControl : MonoBehaviour
     {
         if (clientData.isLocalPlayer)
             playerLobbyInfo.AllReady(isAllReady);
+    }
+
+    public void DoActionDisconnect()
+    {
+        isActionDisconnect = true;
+    }
+
+    public void HideInfos()
+    {
+        UIManager.GetInstance.RemovePlayerLobbyInfo(clientData);
+    }
+
+    private void Disconnect()
+    {
+        HideInfos();
+
+        if (GameManager.gameState == GameState.Playing)
+        {
+            playerState.isLive = false;
+            playerInfo.HideHost();
+
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = clientData.clientNumber,
+                sendType = SendType.DIE
+            });
+        }
+        else if(GameManager.gameState == GameState.Lobby || GameManager.gameState == GameState.NoConnect)
+        {
+            Destroy(playerInfo.gameObject);
+            Destroy(gameObject);
+        }
     }
 }

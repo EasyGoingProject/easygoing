@@ -22,6 +22,16 @@ public class PlayerInfo : MonoBehaviour {
         objDie.SetActive(false);
     }
 
+    public void HideHost()
+    {
+        sprHost.gameObject.SetActive(false);
+    }
+
+    public void UpdatePlayerInfo(ClientData clientData)
+    {
+        sprHost.gameObject.SetActive(clientData.isHost);
+    }
+
     public void SetHealth(float amount)
     {
         sprHealth.fillAmount = amount;

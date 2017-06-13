@@ -151,6 +151,9 @@ public class EnemyControl : MonoBehaviour
         currentTarget = null;
         tempDistanceWithTarget = 100.0f;
 
+        if (GameManager.gameState == GameState.Result)
+            return;
+
         for (int i =0; i < players.Length; i++)
         {
             if(players[i].playerState.isLive)

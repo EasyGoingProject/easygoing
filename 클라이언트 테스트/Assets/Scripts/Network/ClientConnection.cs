@@ -98,7 +98,7 @@ public class ClientConnection
 
         Debug.Log("Disconnected from the server.");
 
-        IOCPManager.GetInstance.Disconnect(sSock);
+        //IOCPManager.GetInstance.Disconnect(sSock);
         sSock.Close();
     }
 }

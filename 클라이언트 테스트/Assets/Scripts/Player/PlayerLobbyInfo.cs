@@ -12,9 +12,8 @@ public class PlayerLobbyInfo : MonoBehaviour
 
     public Color[] borderColor;
 
-    private ClientData clientData;
+    public ClientData clientData;
 
-    public bool isReady = false;
     private bool isReadySet = false;
     private bool isAllReady = false;
 
@@ -29,7 +28,7 @@ public class PlayerLobbyInfo : MonoBehaviour
         lbPlayerName.text = clientData.clientName;
         texCharacter.mainTexture = UIManager.GetInstance.GetCharacterTexture(clientData.characterType);
         sprBorder.color = borderColor[0];
-        isReady = false;
+
         isReadySet = false;
         isAllReady = false;
 
@@ -37,20 +36,27 @@ public class PlayerLobbyInfo : MonoBehaviour
         EventDelegate.Add(btnStart.onClick, OnGameStart);
     }
 
+    public void UpdateLobbyInfo(ClientData _clientData)
+    {
+        NGUITools.SetActive(objHost, clientData.isHost);
+    }
+
     private void OnReady()
     {
-        NetworkData readyNetData = new NetworkData()
-        {
-            senderId = IOCPManager.senderId,
-            sendType = SendType.READY
-        };
+        //NetworkData readyNetData = new NetworkData()
+        //{
+        //    senderId = IOCPManager.senderId,
+        //    sendType = SendType.READY
+        //};
 
-        IOCPManager.GetInstance.SendToServerMessage(readyNetData);
+        //IOCPManager.GetInstance.SendToServerMessage(readyNetData);
+
+        IOCPManager.GetInstance.client.SendClientReady(true);
     }
 
     public void ClientReady()
     {
-        isReady = true;
+        clientData.isReady = true;
     }
 
     public void AllReady(bool _isAllReady)
@@ -70,13 +76,18 @@ public class PlayerLobbyInfo : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (isReady)
+        if (clientData == null || !gameObject.activeSelf)
+            return;
+
+        if (clientData.isReady)
         {
             if(!isReadySet)
             {
                 isReadySet = true;
                 sprBorder.color = borderColor[1];
                 btnReady.gameObject.SetActive(false);
+
+                IOCPManager.GetInstance.AllReadyCheck(true);
             }
         }
 

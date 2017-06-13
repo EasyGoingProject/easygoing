@@ -19,17 +19,29 @@ public class GameManager : Singleton<GameManager>
     {
         Application.runInBackground = true;
 
-        gameState = GameState.NoConnect;
-
         PhysicsLayerSetting();
 
+        InitGameEnd();
         InitSelectCharacter();
-        ResetDataStack();
+        InitHost();
+
+        ResetGame();
     }
 
     private void Update()
     {
         UpdateGameStart();
+    }
+
+    public void ResetGame()
+    {
+        gameState = GameState.NoConnect;
+
+        gameEndTrigger = false;
+
+        ResetDataStack();
+        ResetHost();
+        ResetEnemies();
     }
 
     #region [ Physic ]
@@ -146,10 +158,33 @@ public class GameManager : Singleton<GameManager>
     private int syncObjectID = 100;
     public Dictionary<int, NetworkSyncTransform> networkObjectList = new Dictionary<int, NetworkSyncTransform>();
 
+    private IEnumerator spanwItemCoroutine;
+    private IEnumerator spawnEnemyCoroutine;
+
+    private void InitHost()
+    {
+        spanwItemCoroutine = HostSpawnItem();
+        spawnEnemyCoroutine = HostSpawnEnemy();
+    }
+
     public void GamePlay()
     {
         gameState = GameState.Playing;
         isGameStartEvent = true;
+    }
+
+    private void ResetHost()
+    {
+        StopCoroutine(spanwItemCoroutine);
+        StopCoroutine(spawnEnemyCoroutine);
+
+        foreach(KeyValuePair<int, NetworkSyncTransform> keyval in networkObjectList)
+        {
+            if (keyval.Value != null)
+                Destroy(keyval.Value.gameObject);
+        }
+
+        networkObjectList = new Dictionary<int, NetworkSyncTransform>();
     }
 
     private void UpdateGameStart()
@@ -158,11 +193,16 @@ public class GameManager : Singleton<GameManager>
         {
             isGameStartEvent = false;
 
-            if (IOCPManager.connectionData.isHost)
-            {
-                StartCoroutine(HostSpawnItem());
-                StartCoroutine(HostSpawnEnemy());
-            }
+            PlayHost();
+        }
+    }
+
+    public void PlayHost()
+    {
+        if (IOCPManager.connectionData.isHost)
+        {
+            StartCoroutine(spanwItemCoroutine);
+            StartCoroutine(spawnEnemyCoroutine);
         }
     }
 
@@ -192,6 +232,9 @@ public class GameManager : Singleton<GameManager>
         pControl.netSyncTrans.SetTransform(
             respawnPoints[clientData.clientIndex].position,
             respawnPoints[clientData.clientIndex].eulerAngles);
+
+        if (clientData.isReady)
+            pControl.PlayerReady();
 
         IOCPManager.clientControlList.Add(clientData.clientNumber, pControl);
 
@@ -272,6 +315,9 @@ public class GameManager : Singleton<GameManager>
     {
         if (syncObjectID < attackData.targetId)
             syncObjectID = attackData.targetId + 1;
+
+        if (networkObjectList.ContainsKey(attackData.targetId))
+            return;
 
         WeaponData weaponData = weaponDB.Get(attackData.weaponType);
 
@@ -376,6 +422,18 @@ public class GameManager : Singleton<GameManager>
     public GameObject[] enemyObjPrefab;
     public Dictionary<int, EnemyControl> networkEnemyList = new Dictionary<int, EnemyControl>();
     private List<EnemyControl> networkEnemyValueList = new List<EnemyControl>();
+
+    private void ResetEnemies()
+    {
+        for (int i = 0; i < networkEnemyValueList.Count; i++)
+        {
+            if (networkEnemyValueList[i])
+                Destroy(networkEnemyValueList[i].gameObject);
+        }
+
+        networkEnemyList = new Dictionary<int, EnemyControl>();
+        networkEnemyValueList = new List<EnemyControl>();
+    }
 
     private IEnumerator HostSpawnEnemy()
     {
@@ -538,7 +596,20 @@ public class GameManager : Singleton<GameManager>
         IOCPManager.GetInstance.characterType = charType;
         texCharacter.mainTexture = characterDB.Get(charType).texCharacter;
     }
-    
+
+
+    #endregion
+
+
+    #region [ Game End ]
+
+    [Header("[ Game End ]")]
+    public UIButton btnGameEnd;
+
+    private void InitGameEnd()
+    {
+        EventDelegate.Add(btnGameEnd.onClick, IOCPManager.GetInstance.Disconnect);
+    }
 
     #endregion
 }

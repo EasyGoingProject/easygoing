@@ -522,6 +522,21 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1000010268770066
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 4
+  m_Component:
+  - 4: {fileID: 4000010845008532}
+  m_Layer: 8
+  m_Name: Head
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1000010325763748
 GameObject:
   m_ObjectHideFlags: 1
@@ -8025,6 +8040,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4000010438476466}
   m_RootOrder: 0
+--- !u!4 &4000010845008532
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1000010268770066}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_Children: []
+  m_Father: {fileID: 4000011322562740}
+  m_RootOrder: 8
 --- !u!4 &4000010885673964
 Transform:
   m_ObjectHideFlags: 1
@@ -8640,6 +8668,7 @@ Transform:
   - {fileID: 4000010256190008}
   - {fileID: 4000013303173962}
   - {fileID: 4000010621819228}
+  - {fileID: 4000010845008532}
   m_Father: {fileID: 0}
   m_RootOrder: 0
 --- !u!4 &4000011342263726
@@ -18004,8 +18033,22 @@ MonoBehaviour:
     isAttacking: 0
     currentHealth: 0
     maxHealth: 0
+  clientData:
+    clientNumber: 0
+    characterType: 0
+    isReady: 0
+    isSpawned: 0
+    isDie: 0
+    isLocalPlayer: 0
+    isHost: 0
+    isDisconnected: 0
+    clientIndex: 0
+    clientName: 
+  headTrans: {fileID: 4000010845008532}
   netSyncTrans: {fileID: 0}
   netSyncAnimator: {fileID: 0}
+  isActionDie: 0
+  isActionDisconnect: 0
 --- !u!136 &136000013312382984
 CapsuleCollider:
   m_ObjectHideFlags: 1

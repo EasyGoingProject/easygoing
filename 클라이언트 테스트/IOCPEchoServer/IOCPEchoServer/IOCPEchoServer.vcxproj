@@ -152,10 +152,12 @@
   <ItemGroup>
     <ClCompile Include="ClientList.c" />
     <ClCompile Include="EchoServer.c" />
+    <ClCompile Include="Ranking.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClientList.h" />
     <ClInclude Include="EchoServer.h" />
+    <ClInclude Include="Ranking.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

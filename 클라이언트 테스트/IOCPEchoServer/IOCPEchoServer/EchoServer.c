@@ -295,7 +295,7 @@ unsigned int __stdcall CompletionThread(LPVOID pComPort)
 					char *ptr = strtok(lpIoData->wsaBuf.buf, ",");
 
 					int ptrIndex = 0;
-					char *ptrArray[5];
+					char *ptrArray[6];
 
 					while (ptr != NULL)
 					{

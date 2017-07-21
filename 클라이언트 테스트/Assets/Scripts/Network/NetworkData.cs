@@ -82,6 +82,8 @@ public enum SendType
     ENEMY_ANIMATOR_TRIGGER = 19,
     ENEMY_ATTACK = 20,
     ENEMY_HIT = 21,
-    ENEMY_DIE = 22
+    ENEMY_DIE = 22,
+
+    GAMETIMER = 23
 }
 

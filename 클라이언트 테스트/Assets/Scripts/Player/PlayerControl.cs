@@ -20,6 +20,7 @@ public class PlayerControl : MonoBehaviour
 
     public PlayerState playerState;
     public ClientData clientData;
+    public Transform headTrans;
     
     // 하위 플레이어 컴포넌트들
     private PlayerTransform playerTransform;
@@ -151,7 +152,7 @@ public class PlayerControl : MonoBehaviour
         playerAnimator.UpdateAnimator();
     }
 
-    public void LossHealth(float amount)
+    public void LossHealth(float amount, int attackerId)
     {
         if (!playerState.isLive)
             return;
@@ -166,6 +167,7 @@ public class PlayerControl : MonoBehaviour
             IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
             {
                 senderId = clientData.clientNumber,
+                targetId = attackerId,
                 sendType = SendType.DIE
             });
         }

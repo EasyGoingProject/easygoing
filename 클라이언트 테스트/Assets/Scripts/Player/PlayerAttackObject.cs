@@ -58,7 +58,7 @@ public class PlayerAttackObject : MonoBehaviour
 
             IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
             {
-                senderId = IOCPManager.senderId,
+                senderId = createPlayerId,
                 sendType = SendType.HIT,
                 targetId = pControl.clientData.clientNumber,
                 power = damage,
@@ -76,7 +76,7 @@ public class PlayerAttackObject : MonoBehaviour
 
             IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
             {
-                senderId = IOCPManager.senderId,
+                senderId = createPlayerId,
                 sendType = SendType.ENEMY_HIT,
                 targetId = eControl.enemyID,
                 power = damage,

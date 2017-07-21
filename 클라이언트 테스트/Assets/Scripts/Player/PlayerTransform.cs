@@ -1,5 +1,7 @@
 ﻿// 플레이어의 움직임 정보 컴포넌트
 
+#define ThirdPerson
+
 using UnityEngine;
 using System.Collections;
 
@@ -20,6 +22,10 @@ public class PlayerTransform : MonoBehaviour
     
     // 속도값이 포함된 플레이어 정보 할당
     private CharacterData characterData;
+
+    private float rotateAngle;
+    private Vector3 movement;
+    private Quaternion rotation;
 
 
     #region [ Init ]
@@ -45,11 +51,12 @@ public class PlayerTransform : MonoBehaviour
         if (!isInit)
             return;
 
+#if !ThirdPerson
         // Input Control에서 받아온 위,아래,좌,우 수치를 통해 플레이어가 이동할 위치 지정
         Vector3 targetPos = playerTrans.position;
         targetPos.x += InputControl.MoveX;
         targetPos.z += InputControl.MoveY;
-
+        
         // 이동할 위치와 현재 위치와의 위치값의 차이로 바라볼 방향 확인
         Vector3 lookDirect = targetPos - playerTrans.position;
 
@@ -66,12 +73,31 @@ public class PlayerTransform : MonoBehaviour
                                                    Quaternion.LookRotation(lookDirect),
                                                    characterData.rotateSpeed * Time.deltaTime);
         }
+#else
+        movement = (playerTrans.forward * InputControl.MoveY + playerTrans.right * InputControl.MoveX).normalized;
+
+        playerTrans.position += (movement * characterData.moveSpeed * Time.deltaTime);
+
+        rotateAngle = ClampAngle(rotateAngle + (InputControl.RotateX * characterData.rotateSpeed));
+        rotation = Quaternion.Euler(0, rotateAngle, 0);
+
+        playerTrans.rotation = rotation;
+#endif
     }
 
-    #endregion
+    private float ClampAngle(float targetAngle)
+    {
+        if (targetAngle < -360.0f)
+            targetAngle += 360.0f;
+        else if (targetAngle > 360.0f)
+            targetAngle -= 360.0f;
+        return targetAngle;
+    }
+
+#endregion
 
 
-    #region [ Jump ]
+#region [ Jump ]
 
     [Header("[ Jump ]")]
     // 점프할 힘
@@ -111,5 +137,5 @@ public class PlayerTransform : MonoBehaviour
         playerRigid.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
-    #endregion
+#endregion
 }

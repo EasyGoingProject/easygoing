@@ -33,6 +33,8 @@ public class IOCPManager : Singleton<IOCPManager>
     private const string PrefabDataIP = "ServerIP";
     private const string PrefabDataPort = "ServerPort";
     private const string PrefabDataPlayerName = "PlayerName";
+    private const string PrefabDataPoint = "Point";
+    private const string PrefabDataPotion = "Potion";
 
     private const string DefaultPlayerName = "UnknownPlayer";
 
@@ -47,6 +49,12 @@ public class IOCPManager : Singleton<IOCPManager>
         if (!PlayerPrefs.HasKey(PrefabDataPlayerName))
             PlayerPrefs.SetString(PrefabDataPlayerName, DefaultPlayerName);
 
+        if (!PlayerPrefs.HasKey(PrefabDataPoint))
+            PlayerPrefs.SetInt(PrefabDataPoint, 0);
+
+        if (!PlayerPrefs.HasKey(PrefabDataPotion))
+            PlayerPrefs.SetInt(PrefabDataPotion, 0);
+
         LoadPrefabData();
     }
 
@@ -55,13 +63,15 @@ public class IOCPManager : Singleton<IOCPManager>
         serverAddress = PlayerPrefs.GetString(PrefabDataIP);
         serverPort = int.Parse(PlayerPrefs.GetString(PrefabDataPort));
         playerName = PlayerPrefs.GetString(PrefabDataPlayerName);
+        GameManager.GetInstance.SetPoint(PlayerPrefs.GetInt(PrefabDataPoint));
+        GameManager.GetInstance.SetPotion(PlayerPrefs.GetInt(PrefabDataPotion));
 
         lbServerIp.text = inputServerIP.value = serverAddress;
         lbServerPort.text = inputServerPort.value = serverPort.ToString();
         lbUserName.text = inputUserName.value = playerName;
     }
 
-    private void SavePrefabData()
+    public void SavePrefabData()
     {
         serverAddress = inputServerIP.value;
         serverPort = int.Parse(inputServerPort.value);
@@ -70,6 +80,8 @@ public class IOCPManager : Singleton<IOCPManager>
         PlayerPrefs.SetString(PrefabDataIP, serverAddress);
         PlayerPrefs.SetString(PrefabDataPort, serverPort.ToString());
         PlayerPrefs.SetString(PrefabDataPlayerName, playerName);
+        PlayerPrefs.SetInt(PrefabDataPoint, GameManager.Point);
+        PlayerPrefs.SetInt(PrefabDataPotion, GameManager.PotionCount);
     }
 
     #endregion
@@ -235,6 +247,10 @@ public class IOCPManager : Singleton<IOCPManager>
                     gameManager.GamePlay();
                     break;
 
+                case SendType.GAMETIMER:
+                    gameManager.timerDataList.Add(netData);
+                    break;
+
                 #endregion
 
 
@@ -261,12 +277,19 @@ public class IOCPManager : Singleton<IOCPManager>
 
                 case SendType.HIT:
                     if (clientControlList.ContainsKey(netData.targetId))
-                        clientControlList[netData.targetId].LossHealth(netData.power);
+                        clientControlList[netData.targetId].LossHealth(netData.power, netData.senderId);
                     break;
 
                 case SendType.DIE:
                     if (clientControlList.ContainsKey(netData.senderId))
+                    {
                         clientControlList[netData.senderId].DoActionDie();
+                        if (netData.targetId == senderId)
+                        {
+                            GameManager.KillCount++;
+                            GameManager.GetInstance.AddPoint(1);
+                        }
+                    }
                     gameManager.CheckGameState();
                     break;
 

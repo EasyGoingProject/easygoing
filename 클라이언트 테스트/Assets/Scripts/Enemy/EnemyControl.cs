@@ -92,7 +92,7 @@ public class EnemyControl : MonoBehaviour
         isActionDie = false;
     }
 
-    public void LossHealth(float amount)
+    public void LossHealth(float amount, int attackerId)
     {
         if (!isLive)
             return;
@@ -104,7 +104,7 @@ public class EnemyControl : MonoBehaviour
         {
             IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
             {
-                senderId = IOCPManager.senderId,
+                senderId = attackerId,
                 targetId = enemyID,
                 sendType = SendType.ENEMY_DIE
             });

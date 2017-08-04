@@ -84,6 +84,12 @@ public enum SendType
     ENEMY_HIT = 21,
     ENEMY_DIE = 22,
 
-    GAMETIMER = 23
+    GAMETIMER = 23,
+    ALARM = 24,
+    DEACTIVATEAREA = 25,
+
+    ADDKILL = 26,
+    SPAWN_WINNERPOINT = 27,
+    INWINNERPOINT = 28
 }
 

@@ -36,11 +36,12 @@ public class GameManager : Singleton<GameManager>
     {
         UpdateGameStart();
 
+        if (gameState == GameState.Playing && Input.GetKeyDown(KeyCode.E))
+            UsePotion();
+
         #region [ Test ]
-
-        if (Input.GetKeyDown(KeyCode.KeypadPlus))
-            AddPoint(1);
-
+        //if (Input.GetKeyDown(KeyCode.KeypadPlus))
+        //    AddPoint(1);
         #endregion
     }
 
@@ -51,10 +52,13 @@ public class GameManager : Singleton<GameManager>
         gameEndTrigger = false;
         KillCount = 0;
         gameTimer = TimeSpan.FromSeconds(0);
+        SetTimerString();
 
+        InitHost();
         ResetDataStack();
         ResetHost();
         ResetEnemies();
+        ResetArea();
     }
 
     #region [ Physic ]
@@ -85,22 +89,12 @@ public class GameManager : Singleton<GameManager>
     #region [ Server Message Stack ]
 
     private List<ClientData> nonRespawnedClientList;
-    public List<NetworkData> attackDataList;
-    public List<NetworkData> itemDataList;
-    public List<NetworkData> removeObjectList;
-    public List<NetworkData> enemyDataList;
-    public List<NetworkData> enemyAttackDataList;
-    public List<NetworkData> timerDataList;
+    public List<NetworkData> netDataList;
 
     private void ResetDataStack()
     {
         nonRespawnedClientList = new List<ClientData>();
-        attackDataList = new List<NetworkData>();
-        itemDataList = new List<NetworkData>();
-        removeObjectList = new List<NetworkData>();
-        enemyDataList = new List<NetworkData>();
-        enemyAttackDataList = new List<NetworkData>();
-        timerDataList = new List<NetworkData>();
+        netDataList = new List<NetworkData>();
     }
 
     private void FixedUpdate()
@@ -111,6 +105,11 @@ public class GameManager : Singleton<GameManager>
             if (gameEndTrigger)
             {
                 gameEndTrigger = false;
+                if (resultState == ResultState.Win)
+                    AddPoint(3);
+                else
+                    AddPoint(1);
+
                 UIManager.GetInstance.ShowPanel(PanelType.Result);
             }
 
@@ -122,50 +121,59 @@ public class GameManager : Singleton<GameManager>
                     RespawnCharacter(nonRespawnedClientList[i]);
             }
 
-            if(attackDataList.Count > 0)
+            if(netDataList.Count > 0)
             {
-                for(int i = 0; i < attackDataList.Count; i++)
-                    CreateAttack(attackDataList[i]);
+                for(int i= 0; i < netDataList.Count; i++)
+                {
+                    switch (netDataList[i].sendType)
+                    {
+                        case SendType.ATTACK:
+                            CreateAttack(netDataList[i]);
+                            break;
 
-                attackDataList = new List<NetworkData>();
-            }
+                        case SendType.SPAWN_ITEM:
+                            CreateItem(netDataList[i]);
+                            break;
 
-            if(itemDataList.Count > 0)
-            {
-                for (int i = 0; i < itemDataList.Count; i++)
-                    CreateItem(itemDataList[i]);
+                        case SendType.SPAWN_ENEMY:
+                            CreateEnemy(netDataList[i]);
+                            break;
 
-                itemDataList = new List<NetworkData>();
-            }
+                        case SendType.ENEMY_ATTACK:
+                            CreateEnemyAttack(netDataList[i]);
+                            break;
 
-            if (enemyDataList.Count > 0)
-            {
-                for (int i = 0; i < enemyDataList.Count; i++)
-                    CreateEnemy(enemyDataList[i]);
+                        case SendType.GAMETIMER:
+                            SetTimer(netDataList[i]);
+                            break;
 
-                enemyDataList = new List<NetworkData>();
-            }
+                        case SendType.ALARM:
+                            AreaDeactiveAlarm(netDataList[i]);
+                            break;
 
-            if (enemyAttackDataList.Count > 0)
-            {
-                for (int i = 0; i < enemyAttackDataList.Count; i++)
-                    CreateEnemyAttack(enemyAttackDataList[i]);
+                        case SendType.DESTORY_OBJECT:
+                            RemoveNetworkObject(netDataList[i]);
+                            break;
 
-                enemyAttackDataList = new List<NetworkData>();
-            }
+                        case SendType.DEACTIVATEAREA:
+                            DeactivateArea(netDataList[i]);
+                            break;
 
-            if (removeObjectList.Count > 0)
-            {
-                for (int i = 0; i < removeObjectList.Count; i++)
-                    RemoveNetworkObject(removeObjectList[i]);
+                        case SendType.ADDKILL:
+                            KillOther((int)netDataList[i].power);
+                            break;
 
-                removeObjectList = new List<NetworkData>();
-            }
+                        case SendType.SPAWN_WINNERPOINT:
+                            CreateWinnerPoint(netDataList[i]);
+                            break;
 
-            if(timerDataList.Count > 0)
-            {
-                SetTimer(timerDataList[0]);
-                timerDataList = new List<NetworkData>();
+                        case SendType.INWINNERPOINT:
+                            CheckGameState(netDataList[i].senderId);
+                            break;
+                    }
+                }
+
+                netDataList = new List<NetworkData>();
             }
         }
     }
@@ -248,6 +256,22 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public void CheckGameState(int winnerId)
+    {
+        if(winnerId == IOCPManager.senderId)
+        {
+            gameState = GameState.Result;
+            resultState = ResultState.Win;
+            gameEndTrigger = true;
+        }
+        else
+        {
+            gameState = GameState.Result;
+            resultState = ResultState.Lose;
+            gameEndTrigger = true;
+        }
+    }
+
     #endregion
 
 
@@ -258,7 +282,13 @@ public class GameManager : Singleton<GameManager>
 
     private void InitGameEnd()
     {
-        EventDelegate.Add(btnGameEnd.onClick, IOCPManager.GetInstance.Disconnect);
+        EventDelegate.Add(btnGameEnd.onClick, Disconnect);
+    }
+
+    private void Disconnect()
+    {
+        ResetGame();
+        IOCPManager.GetInstance.Disconnect();
     }
 
     #endregion
@@ -283,6 +313,11 @@ public class GameManager : Singleton<GameManager>
         IOCPManager.GetInstance.SavePrefabData();
     }
 
+    private void KillOther(int point)
+    {
+        KillCount++;
+        GetInstance.AddPoint(point);
+    }
     #endregion
 
 
@@ -440,6 +475,7 @@ public class GameManager : Singleton<GameManager>
             gameTimer = gameTimer.Add(TimeSpan.FromSeconds(1));
             SetTimerString();
             SendTimer(gameTimer);
+            UpdateArea();
         }
     }
 
@@ -734,6 +770,8 @@ public class GameManager : Singleton<GameManager>
     #endregion
 
 
+    // -- AREA -------
+
     #region [ Timer Update ]
 
     [Header("[ Timer Update ]")]
@@ -765,6 +803,155 @@ public class GameManager : Singleton<GameManager>
 
     #endregion
 
+
+    #region [ Deactive Area ]
+
+    [Header("[ Deactive Area ]")]
+    public Area[] areas;
+    public UILabel lbAlarm;
+    private Area nextDeactivateArea;
+
+    public GameObject winnerPointPrefab;
+    private GameObject winnerPointInstance;
+
+    private void ResetArea()
+    {
+        for (int i = 0; i < areas.Length; i++)
+            areas[i].Reset();
+    }
+
+    private void UpdateArea()
+    {
+        if (gameTimer.TotalSeconds >=       //20 Minute
+            //80)
+            1200)  
+        {
+            if (Array.FindAll(areas, x=> !x.isActivate).Length < 4)
+                SendAreaDeactive();
+        }
+        else if (gameTimer.TotalSeconds >=  //18 Minute - Alarm
+            //70)
+            1080) 
+        {
+            if (Array.FindAll(areas, x => !x.isAlarmed).Length < 4)
+            {
+                SendAreaDeactiveAlarm();
+                SendCreateWinnerPoint();
+            }
+        }
+        else if (gameTimer.TotalSeconds >=  //15 Minute
+            //60)
+            900) 
+        {
+            if (Array.FindAll(areas, x => !x.isActivate).Length < 3)
+                SendAreaDeactive();
+        }
+        else if (gameTimer.TotalSeconds >=  //13 Minute - Alarm
+            //50)
+            780) 
+        {
+            if (Array.FindAll(areas, x => x.isAlarmed).Length < 3)
+                SendAreaDeactiveAlarm();
+        }
+        else if (gameTimer.TotalSeconds >=  //10 Minute
+            //40)
+            600) 
+        {
+            if (Array.FindAll(areas, x => !x.isActivate).Length < 2)
+                SendAreaDeactive();
+        }
+        else if (gameTimer.TotalSeconds >=  //8 Minute - Alarm
+            //30)
+            480) 
+        {
+            if (Array.FindAll(areas, x => x.isAlarmed).Length < 2)
+                SendAreaDeactiveAlarm();
+        }
+        else if (gameTimer.TotalSeconds >=  //5 Minute
+            //20) 
+            300) 
+        {
+            if (Array.FindAll(areas, x => !x.isActivate).Length < 1)
+                SendAreaDeactive();
+        }
+        else if (gameTimer.TotalSeconds >=  //3 Minute - Alarm
+            //10)
+            180) 
+        {
+            if (Array.FindAll(areas, x => x.isAlarmed).Length < 1)
+                SendAreaDeactiveAlarm();
+        }
+    }
+
+    private void SendAreaDeactiveAlarm()
+    {
+        Area[] activeAreas = Array.FindAll(areas, x => x.isActivate);
+        nextDeactivateArea = activeAreas[UnityEngine.Random.Range(0, activeAreas.Length)];
+        nextDeactivateArea.Alarm();
+
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            message = nextDeactivateArea.areaNumber.ToString(),
+            sendType = SendType.ALARM
+        });
+    }
+
+    private void AreaDeactiveAlarm(NetworkData netData)
+    {
+        nextDeactivateArea = Array.Find(areas, x => x.areaNumber == int.Parse(netData.message));
+        nextDeactivateArea.Alarm();
+        lbAlarm.text = string.Concat("경고! 2분 후 ", nextDeactivateArea.areaNumber, "구역이 닫힙니다");
+        StartCoroutine(CloseAreaDeactiveAlarm());
+    }
+
+    private IEnumerator CloseAreaDeactiveAlarm()
+    {
+        yield return new WaitForSeconds(5.0f);
+        lbAlarm.text = "";
+    }
+
+    private void SendAreaDeactive()
+    {
+        nextDeactivateArea.Deactivate();
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            message = nextDeactivateArea.areaNumber.ToString(),
+            sendType = SendType.DEACTIVATEAREA
+        });
+    }
+
+    private void DeactivateArea(NetworkData netData)
+    {
+        Array.Find(areas, x => x.areaNumber == int.Parse(netData.message)).Deactivate();
+    }
+
+    private void SendCreateWinnerPoint()
+    {
+        Transform randWinnerPointTrans = nextDeactivateArea.winnerPoints[UnityEngine.Random.Range(0, nextDeactivateArea.winnerPoints.Length)];
+
+        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        {
+            senderId = IOCPManager.senderId,
+            sendType = SendType.SPAWN_WINNERPOINT,
+            position = new NetworkVector()
+            {
+                x = randWinnerPointTrans.position.x,
+                y = randWinnerPointTrans.position.y,
+                z = randWinnerPointTrans.position.z
+            }
+        });
+    }
+
+    private void CreateWinnerPoint(NetworkData netData)
+    {
+        winnerPointInstance = Instantiate(winnerPointPrefab) as GameObject;
+        winnerPointInstance.transform.position = 
+            new Vector3(netData.position.x, netData.position.y, netData.position.z);
+    }
+
+    #endregion
 }
 
 public enum GameState

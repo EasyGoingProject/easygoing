@@ -248,7 +248,11 @@ public class IOCPManager : Singleton<IOCPManager>
                     break;
 
                 case SendType.GAMETIMER:
-                    gameManager.timerDataList.Add(netData);
+                case SendType.ALARM:
+                case SendType.DEACTIVATEAREA:
+                case SendType.SPAWN_WINNERPOINT:
+                case SendType.INWINNERPOINT:
+                    gameManager.netDataList.Add(netData);
                     break;
 
                 #endregion
@@ -272,7 +276,7 @@ public class IOCPManager : Singleton<IOCPManager>
                     break;
 
                 case SendType.ATTACK:
-                    gameManager.attackDataList.Add(netData);
+                    gameManager.netDataList.Add(netData);
                     break;
 
                 case SendType.HIT:
@@ -286,8 +290,11 @@ public class IOCPManager : Singleton<IOCPManager>
                         clientControlList[netData.senderId].DoActionDie();
                         if (netData.targetId == senderId)
                         {
-                            GameManager.KillCount++;
-                            GameManager.GetInstance.AddPoint(1);
+                            gameManager.netDataList.Add(new NetworkData()
+                            {
+                                sendType = SendType.ADDKILL,
+                                power = 3.0f
+                            });
                         }
                     }
                     gameManager.CheckGameState();
@@ -309,16 +316,16 @@ public class IOCPManager : Singleton<IOCPManager>
                 #region [ Item ]
 
                 case SendType.SPAWN_ITEM:
-                    gameManager.itemDataList.Add(netData);
+                    gameManager.netDataList.Add(netData);
+                    break;
+
+                case SendType.DESTORY_OBJECT:
+                    gameManager.netDataList.Add(netData);
                     break;
 
                 case SendType.OBJECT_SYNC_TRANSFORM:
                     if (gameManager.networkObjectList.ContainsKey(netData.targetId))
                         gameManager.networkObjectList[netData.targetId].SetTransform(netData.position, netData.rotation);
-                    break;
-
-                case SendType.DESTORY_OBJECT:
-                    gameManager.removeObjectList.Add(netData);
                     break;
 
                 #endregion
@@ -327,7 +334,11 @@ public class IOCPManager : Singleton<IOCPManager>
                 #region [ Enemy ]
 
                 case SendType.SPAWN_ENEMY:
-                    gameManager.enemyDataList.Add(netData);
+                    gameManager.netDataList.Add(netData);
+                    break;
+
+                case SendType.ENEMY_ATTACK:
+                    gameManager.netDataList.Add(netData);
                     break;
 
                 case SendType.ENEMY_SYNC_TRANSFORM:
@@ -345,18 +356,23 @@ public class IOCPManager : Singleton<IOCPManager>
                         gameManager.networkEnemyList[netData.targetId].netSyncAnimator.NetworkReceiveTrigger(netData);
                     break;
 
-                case SendType.ENEMY_ATTACK:
-                    gameManager.enemyAttackDataList.Add(netData);
-                    break;
-
                 case SendType.ENEMY_HIT:
                     if (gameManager.networkEnemyList.ContainsKey(netData.targetId))
-                        gameManager.networkEnemyList[netData.targetId].LossHealth(netData.power);
+                        gameManager.networkEnemyList[netData.targetId].LossHealth(netData.power, netData.senderId);
                     break;
 
                 case SendType.ENEMY_DIE:
                     if (gameManager.networkEnemyList.ContainsKey(netData.targetId))
                         gameManager.networkEnemyList[netData.targetId].DoActionDie();
+
+                    if (netData.senderId == senderId)
+                    {
+                        gameManager.netDataList.Add(new NetworkData()
+                        {
+                            sendType = SendType.ADDKILL,
+                            power = 1.0f
+                        });
+                    }
                     break;
 
                 #endregion
@@ -574,7 +590,7 @@ public class IOCPManager : Singleton<IOCPManager>
                 isAllReady = false;
         }
 
-        if (hostPlayer != null && clientControlList.Values.Count > 1)
+        if (hostPlayer != null)// && clientControlList.Values.Count > 1)
             hostPlayer.AllPlayerReady(isAllReady);
     }
 
@@ -595,7 +611,6 @@ public class IOCPManager : Singleton<IOCPManager>
         if (client != null)
             client.Disconnect();
 
-        gameManager.ResetGame();
         uiManager.ShowPanel(PanelType.Connection);
     }
 

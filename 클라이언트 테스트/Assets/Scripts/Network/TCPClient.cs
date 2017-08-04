@@ -6,12 +6,10 @@ using System.Text;
 using System.Net.Sockets;
 using System.Collections;
 
-
 public class TCPClient : MonoBehaviour
 {
     public const string ServerMessageHead = "Server";
     public const int BUFFSIZE = 1024;
-    public const int SIZEOFBUFF = 2048;
 
     public enum ConnectionState
     {

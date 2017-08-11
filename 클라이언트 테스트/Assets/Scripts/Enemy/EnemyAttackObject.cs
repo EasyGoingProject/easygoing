@@ -16,6 +16,7 @@ public class EnemyAttackObject : MonoBehaviour
     public void SetAttack(float _duration, float _speed, float _damage)
     {
         attackTrans = transform;
+        attackRigid = GetComponent<Rigidbody>(); //AI 수정 중
 
         duration = _duration;
         speed = _speed;
@@ -69,7 +70,7 @@ public class EnemyAttackObject : MonoBehaviour
         {
             senderId = IOCPManager.senderId,
             targetId = GetComponent<NetworkSyncTransform>().objectNetworkId,
-            sendType = SendType.DESTORY_OBJECT
+            sendType = SendType.DESTROY_OBJECT
         });
     }
 }

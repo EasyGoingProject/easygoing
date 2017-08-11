@@ -40,6 +40,10 @@ public class NetworkSyncTransform : MonoBehaviour {
         isLocalPlayer = isLocal;
     }
 
+    public void SetPhysicsState()
+    {
+    }
+
     public void SetTransform(NetworkVector pos, NetworkVector rot)
     {
         lastPosition = new Vector3(pos.x, pos.y, pos.z);

@@ -30,13 +30,13 @@ public class IOCPManager : Singleton<IOCPManager>
     public UILabel lbUserName;
     public UIInput inputUserName;
 
-    private const string PrefabDataIP = "ServerIP";
-    private const string PrefabDataPort = "ServerPort";
-    private const string PrefabDataPlayerName = "PlayerName";
-    private const string PrefabDataPoint = "Point";
-    private const string PrefabDataPotion = "Potion";
+    private const string PrefabDataIP = "ServerIP"; //아이피
+    private const string PrefabDataPort = "ServerPort"; //포트
+    private const string PrefabDataPlayerName = "PlayerName"; //플레이어 이름
+    private const string PrefabDataPoint = "Point"; // 승점
+    private const string PrefabDataPotion = "Potion"; //물약
 
-    private const string DefaultPlayerName = "UnknownPlayer";
+    private const string DefaultPlayerName = "UnknownPlayer"; //케릭터 이름
 
     private void InitPrefabData()
     {
@@ -82,6 +82,7 @@ public class IOCPManager : Singleton<IOCPManager>
         PlayerPrefs.SetString(PrefabDataPlayerName, playerName);
         PlayerPrefs.SetInt(PrefabDataPoint, GameManager.Point);
         PlayerPrefs.SetInt(PrefabDataPotion, GameManager.PotionCount);
+        PlayerPrefs.Save();
     }
 
     #endregion
@@ -130,7 +131,7 @@ public class IOCPManager : Singleton<IOCPManager>
     #region [ Connect ]
 
     [Header("[ Connect ]")]
-    public string serverAddress = "127.0.0.1";
+    public string serverAddress = "192.168.0.1";
     public int serverPort = 2738;
     public string playerName = "UnknownPlayer";
 
@@ -148,8 +149,9 @@ public class IOCPManager : Singleton<IOCPManager>
 
     private bool isConnectionFailed = false;
     private bool isChangeHost = false;
-
     
+
+
     private void InitConnect()
     {
         EventDelegate.Add(btnServerConnect.onClick, ConnectClick);
@@ -189,6 +191,12 @@ public class IOCPManager : Singleton<IOCPManager>
         isConnectionFailed = true;
     }
 
+    public bool isConnected()
+    {
+        return client != null
+            && client.connectState == TCPClient.ConnectionState.Connected;
+    }
+
     private IEnumerator ConnectFailedCoroutine()
     {
         connectFailedObj.SetActive(true);
@@ -204,6 +212,7 @@ public class IOCPManager : Singleton<IOCPManager>
 
 
     #region [ Send Message ]
+    
 
     public void SendToServerMessage(NetworkData netData)
     {
@@ -212,8 +221,7 @@ public class IOCPManager : Singleton<IOCPManager>
         {
             try
             {
-                byte[] mesObj = ConverterTools.ConvertObjectToBytes(netData);
-                client.SendData(netData);
+                client.SendData(netData, true);
             }
             catch (Exception e)
             {
@@ -227,9 +235,11 @@ public class IOCPManager : Singleton<IOCPManager>
 
     #region [ Receive Message ]
 
-    // 데이터 확보 -> 동기화 : 클라간 데이터 전송
+    // 데이터 확보 -> 동기화 : 클라간 데이터 전송 <클라와 클라간>
     public void ReceiveData(NetworkData netData)
     {
+        if (netData.senderId == connectionData.clientIndex) return;
+
         try
         {
             switch (netData.sendType)
@@ -239,11 +249,11 @@ public class IOCPManager : Singleton<IOCPManager>
                 case SendType.READY:
                     if (clientControlList.ContainsKey(netData.senderId))
                         clientControlList[netData.senderId].PlayerReady();
-                    AllReadyCheck(true);
+                    if (connectionData.isHost)
+                        HostAllReadyCheck();
                     break;
 
                 case SendType.GAMESTART:
-                    uiManager.SetTargetPanel(PanelType.Play);
                     gameManager.GamePlay();
                     break;
 
@@ -252,14 +262,17 @@ public class IOCPManager : Singleton<IOCPManager>
                 case SendType.DEACTIVATEAREA:
                 case SendType.SPAWN_WINNERPOINT:
                 case SendType.INWINNERPOINT:
-                    gameManager.netDataList.Add(netData);
+                    gameManager.netDataList.Enqueue(netData);
                     break;
 
                 #endregion
 
 
                 #region [ Players ]
-
+                case SendType.SYNC_PHYSICS_STATE:
+                    if (clientControlList.ContainsKey(netData.senderId))
+                        clientControlList[netData.senderId].netSyncTrans.SetPhysicsState();
+                    break;
                 case SendType.SYNCTRANSFORM:
                     if (clientControlList.ContainsKey(netData.senderId))
                         clientControlList[netData.senderId].netSyncTrans.SetTransform(netData.position, netData.rotation);
@@ -276,12 +289,14 @@ public class IOCPManager : Singleton<IOCPManager>
                     break;
 
                 case SendType.ATTACK:
-                    gameManager.netDataList.Add(netData);
+                    gameManager.netDataRapid.Enqueue(netData);
                     break;
 
                 case SendType.HIT:
                     if (clientControlList.ContainsKey(netData.targetId))
+                    {
                         clientControlList[netData.targetId].LossHealth(netData.power, netData.senderId);
+                    }
                     break;
 
                 case SendType.DIE:
@@ -290,7 +305,7 @@ public class IOCPManager : Singleton<IOCPManager>
                         clientControlList[netData.senderId].DoActionDie();
                         if (netData.targetId == senderId)
                         {
-                            gameManager.netDataList.Add(new NetworkData()
+                            gameManager.netDataRapid.Enqueue(new NetworkData()
                             {
                                 sendType = SendType.ADDKILL,
                                 power = 3.0f
@@ -316,11 +331,11 @@ public class IOCPManager : Singleton<IOCPManager>
                 #region [ Item ]
 
                 case SendType.SPAWN_ITEM:
-                    gameManager.netDataList.Add(netData);
+                    gameManager.netDataRapid.Enqueue(netData);
                     break;
 
-                case SendType.DESTORY_OBJECT:
-                    gameManager.netDataList.Add(netData);
+                case SendType.DESTROY_OBJECT:
+                    gameManager.netDataRapid.Enqueue(netData);
                     break;
 
                 case SendType.OBJECT_SYNC_TRANSFORM:
@@ -332,13 +347,13 @@ public class IOCPManager : Singleton<IOCPManager>
 
 
                 #region [ Enemy ]
-
+                    //브로드캐스트 변화 적용
                 case SendType.SPAWN_ENEMY:
-                    gameManager.netDataList.Add(netData);
+                    gameManager.netDataRapid.Enqueue(netData);
                     break;
 
                 case SendType.ENEMY_ATTACK:
-                    gameManager.netDataList.Add(netData);
+                    gameManager.netDataRapid.Enqueue(netData);
                     break;
 
                 case SendType.ENEMY_SYNC_TRANSFORM:
@@ -367,7 +382,7 @@ public class IOCPManager : Singleton<IOCPManager>
 
                     if (netData.senderId == senderId)
                     {
-                        gameManager.netDataList.Add(new NetworkData()
+                        gameManager.netDataRapid.Enqueue(new NetworkData()
                         {
                             sendType = SendType.ADDKILL,
                             power = 1.0f
@@ -592,6 +607,20 @@ public class IOCPManager : Singleton<IOCPManager>
 
         if (hostPlayer != null)// && clientControlList.Values.Count > 1)
             hostPlayer.AllPlayerReady(isAllReady);
+    }
+
+    public void HostAllReadyCheck()
+    {
+        bool allready = true;
+        foreach (KeyValuePair<int, PlayerControl> keyVal in clientControlList)
+        {
+            if (!keyVal.Value.IsPlayerReady)
+            {
+                allready = false;
+                break;
+            }
+        }
+        myPlayerControl.AllPlayerReady(allready);
     }
 
     #endregion

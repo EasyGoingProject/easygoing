@@ -5,11 +5,13 @@ using System;
 using System.Text;
 using System.Net.Sockets;
 using System.Collections;
+using System.Collections.Generic;
+using System.Net;
 
 public class TCPClient : MonoBehaviour
 {
     public const string ServerMessageHead = "Server";
-    public const int BUFFSIZE = 1024;
+    public const int BUFFSIZE = 2048;
 
     public enum ConnectionState
     {
@@ -27,6 +29,7 @@ public class TCPClient : MonoBehaviour
     private Socket clientSocket;
     private byte[] readBuffer;
     private IOCPManager iocpManager;
+    
 
     private void Start()
     {
@@ -75,7 +78,7 @@ public class TCPClient : MonoBehaviour
         Debug.Log("Client connected");
 #endif
 
-            BeginReceiveData();
+            BeginReceiveData(4);
         }
         else
         {
@@ -92,8 +95,8 @@ public class TCPClient : MonoBehaviour
     {
         if (clientSocket != null)
         {
-            clientSocket.Close();
-            clientSocket = null;
+            connectState = ConnectionState.NotConnected;
+            SendClientData("End");
         }
     }
 
@@ -107,27 +110,58 @@ public class TCPClient : MonoBehaviour
 
     #region [ Receive Data ]
 
-    private void BeginReceiveData()
+    byte[] willRecv = new byte[4];
+    bool header = true;
+
+    private void BeginReceiveData(int recvLen)
     {
-        clientSocket.BeginReceive(readBuffer, 0, readBuffer.Length, SocketFlags.None, EndReceiveData, null);
+        if (header)
+            clientSocket.BeginReceive(willRecv, 0, recvLen, SocketFlags.None, EndReceiveData, null);
+        else
+            clientSocket.BeginReceive(readBuffer, 0, recvLen, SocketFlags.None, EndReceiveData, null);
     }
 
+    int realWill;
     private void EndReceiveData(IAsyncResult iar)
     {
-        int numBytesReceived = clientSocket.EndReceive(iar);
-        byte[] readData = readBuffer;
+        if(header)
+        {
+            clientSocket.EndReceive(iar);
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(willRecv);
+            }
+            realWill = BitConverter.ToInt32(willRecv, 0);
+            header = false;
 
-        readBuffer = new byte[BUFFSIZE];
-        BeginReceiveData();
+            BeginReceiveData(realWill);
+        }
+        else
+        {
+            int numBytesReceived = clientSocket.EndReceive(iar);
+            byte[] readData = readBuffer;
 
-        if (numBytesReceived > 0)
-            ProcessData(readData, numBytesReceived);
+            readBuffer = new byte[BUFFSIZE];
+            header = true;
+            BeginReceiveData(4);
+
+            if (numBytesReceived > 0)
+                ProcessData(readData, numBytesReceived);
+        }
     }
 
     #endregion
 
 
     #region [ Data Processing ]
+
+    public static string ByteArrayToHexString(byte[] ba, int length)
+    {
+        StringBuilder hex = new StringBuilder(ba.Length * 3);
+        for(int i=0;i<length;i++)
+            hex.AppendFormat("{0:x2} ", ba[i]);
+        return hex.ToString();
+    }
 
     private void ProcessData(byte[] readData, int numBytesRecv)
     {
@@ -164,12 +198,12 @@ public class TCPClient : MonoBehaviour
         {
             try
             {
-                NetworkData incMes = (NetworkData)ConverterTools.ConvertBytesToOjbect(readData);
+                NetworkData incMes = (NetworkData)ConverterTools.ConvertBytesToOjbect(readData, numBytesRecv);
                 iocpManager.ReceiveData(incMes);
             }
             catch (Exception e)
             {
-                Debug.Log("Server message getted failed. " + e.Message + " / " + serverMessage);
+                Debug.Log("Server message getted failed. " + e.Message + "\n"+ByteArrayToHexString(readData, numBytesRecv));
             }
         }
     }
@@ -178,6 +212,17 @@ public class TCPClient : MonoBehaviour
 
 
     #region [ Send ]
+    
+    //데이터를 보내는데에 순서를 정하기위해 send 대기열(queue)을 만들었다.
+    private Queue<DataToSend> sendpacketorder = new Queue<DataToSend>();
+
+    //send 대기열의 정보다.
+    private struct DataToSend
+    {
+        public byte[] data;             //보낼 데이터
+        public int length;              //보낼 데이터의 크기
+        public bool headerTransfered;   //헤더가 보내졌는지(true) 데이터가 보내졌는지(false)에 대한 정보다.
+    };
 
     public void SendClientConnected()
     {
@@ -205,20 +250,70 @@ public class TCPClient : MonoBehaviour
     public void SendData(string message)
     {
         byte[] msgArray = Encoding.UTF8.GetBytes(message);
-        int len = msgArray.Length;
-        clientSocket.BeginSend(msgArray, 0, len, SocketFlags.None, EndSend, msgArray);
+        //이제 데이터를 보내기 위해서는 해더를 먼저 보내 데이터의 크기를 알려줘야 한다.
+        SendHeaderFirst(msgArray);
     }
-
-    public void SendData(NetworkData netData)
+    
+    public void SendData(NetworkData netData, bool activateCallback)
     {
         byte[] msgArray = ConverterTools.ConvertObjectToBytes(netData);
-        int len = msgArray.Length;
-        clientSocket.BeginSend(msgArray, 0, len, SocketFlags.None, EndSend, msgArray);
+        //마찬가지로 해더를 먼저 보낸다.
+        SendHeaderFirst(msgArray);
     }
 
+    //해더를 보내고 DataToSend구조체를 구성하여 대기열에 저장한다. 
+    //대기열에 아무것도 없을 때, 메인 스레드(게임 스레드)에서 대기열의 모든 데이터에 대한 전송을 triggering한다.
+    public void SendHeaderFirst(byte[] tosend)
+    {
+        byte[] intBytes = BitConverter.GetBytes(tosend.Length);
+        if(!BitConverter.IsLittleEndian)
+            Array.Reverse(intBytes);
+        byte[] result = intBytes;
+
+        DataToSend data;
+        data.data = tosend;
+        data.length = tosend.Length;
+        data.headerTransfered = true;
+
+        if(sendpacketorder.Count == 0)
+            clientSocket.BeginSend(result, 0, 4, SocketFlags.None, EndSend, data);
+
+        sendpacketorder.Enqueue(data);
+    }
+
+    //비동기 작업의 Completion Callback
+    //순서 있는 통신을 진행시키는 중요한 메소드
     private void EndSend(IAsyncResult iar)
     {
-        clientSocket.EndSend(iar);
+        int sended = clientSocket.EndSend(iar);
+        DataToSend data = (DataToSend)iar.AsyncState;
+
+        if (data.headerTransfered)//헤더 -> 데이터
+        {
+            data.headerTransfered = false;
+            clientSocket.BeginSend(data.data, 0, data.length, SocketFlags.None, EndSend, data);
+        }
+        else//데이터 -> 헤더(데이터가 대기중에 있으면)
+        {
+            sendpacketorder.Dequeue();
+            if(connectState == ConnectionState.NotConnected)
+            {
+                clientSocket.Close();
+                clientSocket = null;
+                return;
+            }
+
+            if(sendpacketorder.Count > 0)
+            {
+                DataToSend tosend = sendpacketorder.ToArray()[0];
+                
+                byte[] intBytes = BitConverter.GetBytes(tosend.length);
+                if(!BitConverter.IsLittleEndian)
+                    Array.Reverse(intBytes);
+                byte[] result = intBytes;
+                clientSocket.BeginSend(result, 0, 4, SocketFlags.None, EndSend, tosend);
+            }
+        }
     }
 
     #endregion

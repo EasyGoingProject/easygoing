@@ -72,11 +72,13 @@ public enum SendType
     EQUIPWEAPON = 11,
 
     OBJECT_SYNC_TRANSFORM = 14,
-    DESTORY_OBJECT = 15,
-
+    DESTROY_OBJECT = 15,
+    
+    // 스폰되는 적과 아이템
     SPAWN_ITEM = 13,
     SPAWN_ENEMY = 16,
 
+    //적 관련
     ENEMY_SYNC_TRANSFORM = 17,
     ENEMY_ANIMATOR_MOVE = 18,
     ENEMY_ANIMATOR_TRIGGER = 19,
@@ -89,7 +91,8 @@ public enum SendType
     DEACTIVATEAREA = 25,
 
     ADDKILL = 26,
-    SPAWN_WINNERPOINT = 27,
-    INWINNERPOINT = 28
+    SPAWN_WINNERPOINT = 27, //승리 포인트
+    INWINNERPOINT = 28,
+    SYNC_PHYSICS_STATE = 29,
 }
 

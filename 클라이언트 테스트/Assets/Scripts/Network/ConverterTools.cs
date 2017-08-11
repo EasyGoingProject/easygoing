@@ -5,11 +5,11 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 public class ConverterTools
 {
-    public static System.Object ConvertBytesToOjbect(byte[] b)
+    public static System.Object ConvertBytesToOjbect(byte[] b, int length)
     {
         MemoryStream memStream = new MemoryStream();
         BinaryFormatter binForm = new BinaryFormatter();
-        memStream.Write(b, 0, b.Length);
+        memStream.Write(b, 0, length);
         memStream.Seek(0, SeekOrigin.Begin);
         object obj = (object)binForm.Deserialize(memStream);
         return obj;

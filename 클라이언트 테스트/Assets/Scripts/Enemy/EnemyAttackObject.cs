@@ -16,7 +16,7 @@ public class EnemyAttackObject : MonoBehaviour
     public void SetAttack(float _duration, float _speed, float _damage)
     {
         attackTrans = transform;
-        attackRigid = GetComponent<Rigidbody>(); //AI 수정 중
+        attackRigid = GetComponent<Rigidbody>();
 
         duration = _duration;
         speed = _speed;

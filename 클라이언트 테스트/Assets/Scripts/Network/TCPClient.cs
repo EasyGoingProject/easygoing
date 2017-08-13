@@ -27,14 +27,12 @@ public class TCPClient : MonoBehaviour
     public ConnectionState connectState;
 
     private Socket clientSocket;
-    private byte[] readBuffer;
     private IOCPManager iocpManager;
     
 
     private void Start()
     {
         connectState = ConnectionState.NotConnected;
-        readBuffer = new byte[BUFFSIZE];
     }
 
     #region [ Connect ]
@@ -78,7 +76,7 @@ public class TCPClient : MonoBehaviour
         Debug.Log("Client connected");
 #endif
 
-            BeginReceiveData(4);
+            ReceiveHeaderFirst();
         }
         else
         {
@@ -110,45 +108,75 @@ public class TCPClient : MonoBehaviour
 
     #region [ Receive Data ]
 
-    byte[] willRecv = new byte[4];
-    bool header = true;
-
-    private void BeginReceiveData(int recvLen)
+    private struct ReceiveBuffer
     {
-        if (header)
-            clientSocket.BeginReceive(willRecv, 0, recvLen, SocketFlags.None, EndReceiveData, null);
-        else
-            clientSocket.BeginReceive(readBuffer, 0, recvLen, SocketFlags.None, EndReceiveData, null);
+        public int offset;
+        public int recvCompletedBytes;
+        public byte[] recvBuffer;
+        public int recvLength;
+        public int totalRecvLength;
+    };
+
+    private void ReceiveHeaderFirst()
+    {
+        ReceiveBuffer buffer = new ReceiveBuffer();
+        buffer.offset = 0;
+        buffer.recvLength = 4;
+        buffer.totalRecvLength = 0;
+        buffer.recvBuffer = new byte[BUFFSIZE];
+        clientSocket.BeginReceive(buffer.recvBuffer, buffer.offset, buffer.recvLength, SocketFlags.None, EndReceiveHeader, buffer);
     }
 
-    int realWill;
+    private void EndReceiveHeader(IAsyncResult iar)
+    {
+        ReceiveBuffer buffer = (ReceiveBuffer)iar.AsyncState;
+        buffer.recvCompletedBytes = clientSocket.EndReceive(iar);
+
+        if(buffer.recvLength != buffer.recvCompletedBytes)
+        {
+            Debug.Log("Invalid header length : " + buffer.recvCompletedBytes);
+            Application.Quit();
+        }
+        else
+        {
+            buffer.offset = 0;
+            buffer.recvLength = BitConverter.ToInt32(buffer.recvBuffer, 0);
+            buffer.totalRecvLength = buffer.recvLength;
+
+            clientSocket.BeginReceive(buffer.recvBuffer, buffer.offset, buffer.recvLength, SocketFlags.None, EndReceiveData, buffer);
+        }
+    }
+
     private void EndReceiveData(IAsyncResult iar)
     {
-        if(header)
-        {
-            clientSocket.EndReceive(iar);
-            if (!BitConverter.IsLittleEndian)
-            {
-                Array.Reverse(willRecv);
-            }
-            realWill = BitConverter.ToInt32(willRecv, 0);
-            header = false;
+        ReceiveBuffer buffer = (ReceiveBuffer)iar.AsyncState;
+        buffer.recvCompletedBytes = clientSocket.EndReceive(iar);
 
-            BeginReceiveData(realWill);
+        int calculatedLength = buffer.recvCompletedBytes + buffer.offset;
+
+        //부족하게 받았을 때 보정
+        if(buffer.recvLength > buffer.recvCompletedBytes)
+        {
+            Debug.Log("Invalid data length : " + buffer.recvCompletedBytes);
+            int remain = buffer.recvLength - buffer.recvCompletedBytes;
+
+            buffer.recvLength = remain;
+            buffer.offset += buffer.recvCompletedBytes;
+
+            clientSocket.BeginReceive(buffer.recvBuffer, buffer.offset, buffer.recvLength, SocketFlags.None, EndReceiveData, buffer);
+        }
+        else if(calculatedLength != buffer.totalRecvLength)
+        {
+            Debug.Log("Programming Error");
+            Application.Quit();
         }
         else
         {
-            int numBytesReceived = clientSocket.EndReceive(iar);
-            byte[] readData = readBuffer;
-
-            readBuffer = new byte[BUFFSIZE];
-            header = true;
-            BeginReceiveData(4);
-
-            if (numBytesReceived > 0)
-                ProcessData(readData, numBytesReceived);
+            ReceiveHeaderFirst();
+            ProcessData(buffer.recvBuffer, buffer.totalRecvLength);
         }
     }
+    
 
     #endregion
 
@@ -198,7 +226,7 @@ public class TCPClient : MonoBehaviour
         {
             try
             {
-                NetworkData incMes = (NetworkData)ConverterTools.ConvertBytesToOjbect(readData, numBytesRecv);
+                NetworkData incMes = (NetworkData)ConverterTools.ConvertBytesToObject(readData, numBytesRecv);
                 iocpManager.ReceiveData(incMes);
             }
             catch (Exception e)

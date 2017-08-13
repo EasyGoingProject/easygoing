@@ -5,7 +5,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 public class ConverterTools
 {
-    public static System.Object ConvertBytesToOjbect(byte[] b, int length)
+    public static System.Object ConvertBytesToObject(byte[] b, int length)
     {
         MemoryStream memStream = new MemoryStream();
         BinaryFormatter binForm = new BinaryFormatter();

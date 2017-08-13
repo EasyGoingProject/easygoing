@@ -30,13 +30,13 @@ public class IOCPManager : Singleton<IOCPManager>
     public UILabel lbUserName;
     public UIInput inputUserName;
 
-    private const string PrefabDataIP = "ServerIP"; //아이피
-    private const string PrefabDataPort = "ServerPort"; //포트
-    private const string PrefabDataPlayerName = "PlayerName"; //플레이어 이름
-    private const string PrefabDataPoint = "Point"; // 승점
-    private const string PrefabDataPotion = "Potion"; //물약
+    private const string PrefabDataIP = "ServerIP";
+    private const string PrefabDataPort = "ServerPort";
+    private const string PrefabDataPlayerName = "PlayerName";
+    private const string PrefabDataPoint = "Point";
+    private const string PrefabDataPotion = "Potion";
 
-    private const string DefaultPlayerName = "UnknownPlayer"; //케릭터 이름
+    private const string DefaultPlayerName = "UnknownPlayer";
 
     private void InitPrefabData()
     {
@@ -235,7 +235,7 @@ public class IOCPManager : Singleton<IOCPManager>
 
     #region [ Receive Message ]
 
-    // 데이터 확보 -> 동기화 : 클라간 데이터 전송 <클라와 클라간>
+    // 데이터 확보 -> 동기화 : 클라간 데이터 전송
     public void ReceiveData(NetworkData netData)
     {
         if (netData.senderId == connectionData.clientIndex) return;
@@ -293,6 +293,7 @@ public class IOCPManager : Singleton<IOCPManager>
                     break;
 
                 case SendType.HIT:
+                    Debug.Log("Hit, Attacker : " + netData.senderId + ", Target : " + netData.targetId);
                     if (clientControlList.ContainsKey(netData.targetId))
                     {
                         clientControlList[netData.targetId].LossHealth(netData.power, netData.senderId);

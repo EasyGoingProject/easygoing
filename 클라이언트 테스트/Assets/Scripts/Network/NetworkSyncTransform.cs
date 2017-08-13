@@ -61,7 +61,7 @@ public class NetworkSyncTransform : MonoBehaviour {
 
     void Update()
     {
-        if (isLocalPlayer)
+        if (isLocalPlayer)//로컬 플레이어면 필요없음/호스트면 필요없음
             return;
 
         InterpolatePosition();
@@ -80,7 +80,7 @@ public class NetworkSyncTransform : MonoBehaviour {
 
     void FixedUpdate()
     {
-        if (!isLocalPlayer)
+        if (!isLocalPlayer)//로컬 플레이어면 처리/호스트면 처리
             return;
 
         if (IsPositionChanged() || IsRotationChanged())

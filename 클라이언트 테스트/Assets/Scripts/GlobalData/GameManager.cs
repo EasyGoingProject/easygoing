@@ -101,28 +101,6 @@ public class GameManager : Singleton<GameManager>
                 NetworkData front = netDataRapid.Dequeue();
                 switch(front.sendType)
                 {
-                    case SendType.SYNCTRANSFORM:
-                        if (IOCPManager.clientControlList.ContainsKey(front.senderId))
-                            IOCPManager.clientControlList[front.senderId].netSyncTrans.SetTransform(front.position, front.rotation);
-                        break;
-                    case SendType.OBJECT_SYNC_TRANSFORM:
-                        if (networkObjectList.ContainsKey(front.targetId))
-                            networkObjectList[front.targetId].SetTransform(front.position, front.rotation);
-                        break;
-                    case SendType.ANIMATOR_MOVE:
-                        if (IOCPManager.clientControlList.ContainsKey(front.senderId))
-                            IOCPManager.clientControlList[front.senderId].netSyncAnimator.SetAnimatorMove(front);
-                        break;
-                    case SendType.ANIMATOR_TRIGGER:
-                        if (IOCPManager.clientControlList.ContainsKey(front.senderId))
-                            IOCPManager.clientControlList[front.senderId].netSyncAnimator.NetworkReceiveTrigger(front);
-                        break;
-                    case SendType.HIT:
-                        if (IOCPManager.clientControlList.ContainsKey(front.targetId))
-                        {
-                            IOCPManager.clientControlList[front.targetId].LossHealth(front.power, front.senderId);
-                        }
-                        break;
                     case SendType.ATTACK:
                         CreateAttack(front);
                         break;
@@ -170,61 +148,57 @@ public class GameManager : Singleton<GameManager>
                     RespawnCharacter(nonRespawnedClientList[i]);
             }
 
-            if(netDataList.Count > 0)
+            while (netDataList.Count > 0)
             {
-                int i = 0;
-                while(netDataList.Count > 0)
+                NetworkData front = netDataList.Dequeue();
+                switch (front.sendType)
                 {
-                    NetworkData front = netDataRapid.Dequeue();
-                    switch (front.sendType)
-                    {
-                        /*case SendType.ATTACK:
-                            CreateAttack(netDataList[i]);
-                            break;*/
+                    /*case SendType.ATTACK:
+                        CreateAttack(netDataList[i]);
+                        break;*/
 
-                        /*case SendType.SPAWN_ITEM:
-                            CreateItem(netDataList[i]);
-                            netDataList.RemoveAt(i);
-                            break;
+                    /*case SendType.SPAWN_ITEM:
+                        CreateItem(netDataList[i]);
+                        netDataList.RemoveAt(i);
+                        break;
 
-                        case SendType.SPAWN_ENEMY:
-                            CreateEnemy(netDataList[i]);
-                            netDataList.RemoveAt(i);
-                            break;*/
+                    case SendType.SPAWN_ENEMY:
+                        CreateEnemy(netDataList[i]);
+                        netDataList.RemoveAt(i);
+                        break;*/
 
-                        /*case SendType.ENEMY_ATTACK:
-                            CreateEnemyAttack(netDataList[i]);
-                            break;*/
+                    /*case SendType.ENEMY_ATTACK:
+                        CreateEnemyAttack(netDataList[i]);
+                        break;*/
 
-                        case SendType.GAMETIMER:
-                            SetTimer(front);
-                            break;
+                    case SendType.GAMETIMER:
+                        SetTimer(front);
+                        break;
 
-                        case SendType.ALARM:
-                            AreaDeactiveAlarm(front);
-                            break;
+                    case SendType.ALARM:
+                        AreaDeactiveAlarm(front);
+                        break;
 
-                        /*case SendType.DESTORY_OBJECT:
-                            RemoveNetworkObject(netDataList[i]);
-                            break;*/
+                    /*case SendType.DESTORY_OBJECT:
+                        RemoveNetworkObject(netDataList[i]);
+                        break;*/
 
-                        case SendType.DEACTIVATEAREA:
-                            DeactivateArea(front);
-                            break;
+                    case SendType.DEACTIVATEAREA:
+                        DeactivateArea(front);
+                        break;
 
-                        /*case SendType.ADDKILL:
-                            KillOther((int)netDataList[i].power);
-                            netDataList.RemoveAt(i);
-                            break;*/
+                    /*case SendType.ADDKILL:
+                        KillOther((int)netDataList[i].power);
+                        netDataList.RemoveAt(i);
+                        break;*/
 
-                        case SendType.SPAWN_WINNERPOINT:
-                            CreateWinnerPoint(front);
-                            break;
+                    case SendType.SPAWN_WINNERPOINT:
+                        CreateWinnerPoint(front);
+                        break;
 
-                        case SendType.INWINNERPOINT:
-                            CheckGameState(front.senderId);
-                            break;
-                    }
+                    case SendType.INWINNERPOINT:
+                        CheckGameState(front.senderId);
+                        break;
                 }
             }
         }
@@ -486,7 +460,7 @@ public class GameManager : Singleton<GameManager>
         if (IOCPManager.connectionData.isHost)
         {
             //문제 후보1 : 맞음
-            //StartCoroutine(spanwItemCoroutine);
+            //StartCoroutine(spawnItemCoroutine);
             //문제 후보2 : 맞음
             //StartCoroutine(spawnEnemyCoroutine);
             //문제 후보3 : 아님
@@ -699,7 +673,7 @@ public class GameManager : Singleton<GameManager>
         GameObject attackObj = Instantiate(weaponData.attackObject) as GameObject;
         attackObj.transform.position = new Vector3(attackData.position.x, attackData.position.y, attackData.position.z);
         attackObj.transform.rotation = Quaternion.Euler(new Vector3(attackData.rotation.x, attackData.rotation.y, attackData.rotation.z));
-
+        
         attackObj.GetComponent<NetworkSyncTransform>().SetObject(attackData.targetId, IOCPManager.connectionData.isHost);
 
         attackObj.GetComponent<PlayerAttackObject>().SetAttack(
@@ -797,7 +771,7 @@ public class GameManager : Singleton<GameManager>
                                       UnityEngine.Random.Range(-itemZoneSize, itemZoneSize));
         Vector3 randRot = Vector3.zero;
 
-        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        NetworkData item = new NetworkData()
         {
             senderId = IOCPManager.senderId,
             targetId = syncObjectID,
@@ -815,7 +789,11 @@ public class GameManager : Singleton<GameManager>
                 y = randRot.y,
                 z = randRot.z
             }
-        });
+        };
+
+        //생성한 클라이언트는 직접 처리
+        IOCPManager.GetInstance.SendToServerMessage(item);
+        CreateItem(item);
     }
 
     private void CreateItem(NetworkData itemData)

@@ -17,7 +17,8 @@ public class InputControl : MonoBehaviour
     {
         MoveY = Input.GetAxis("Vertical");
         MoveX = Input.GetAxis("Horizontal");
-        RotateX = Mathf.Clamp(Input.GetAxis("Mouse X"), -1.0f, 1.0f);
+        //회전 변화율 -1~1 -> -5~5, 이에 맞게 SmoothFollow의 RotationDamper도 5로 수정
+        RotateX = Mathf.Clamp(Input.GetAxis("Mouse X"), -5.0f, 5.0f);
         
         isMoving = (Mathf.Abs(MoveX) > 0 || Mathf.Abs(MoveY) > 0);
     }

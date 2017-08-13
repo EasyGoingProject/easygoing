@@ -23,6 +23,9 @@ public class ItemControl : MonoBehaviour
                             senderId = IOCPManager.senderId,
                             sendType = SendType.ADDHEALTH,
                         });
+                        //보낸클라이언트가 직접 처리
+                        IOCPManager.myPlayerControl.AddHealth(GlobalData.ITEM_HEALTH_HEAL_AMOUNT);
+
                         break;
 
                     case ItemType.WEAPON_BOW:
@@ -48,6 +51,9 @@ public class ItemControl : MonoBehaviour
                             sendType = SendType.EQUIPWEAPON,
                             weaponType = weaponType
                         });
+
+                        //보낸 클라이언트가 직접 처리
+                        IOCPManager.myPlayerControl.SetWeapon(weaponType);
                         break;
                 }
             }
@@ -59,12 +65,14 @@ public class ItemControl : MonoBehaviour
     private void Dispose()
     {
         //Destroy(gameObject);
-
-        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        if(IOCPManager.connectionData.isHost)
         {
-            senderId = IOCPManager.senderId,
-            targetId = GetComponent<NetworkSyncTransform>().objectNetworkId,
-            sendType = SendType.DESTORY_OBJECT
-        });
+            IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+            {
+                senderId = IOCPManager.senderId,
+                targetId = GetComponent<NetworkSyncTransform>().objectNetworkId,
+                sendType = SendType.DESTROY_OBJECT
+            });
+        }
     }
 }

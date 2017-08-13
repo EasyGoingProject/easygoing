@@ -31,19 +31,7 @@ public class GameManager : Singleton<GameManager>
 
         ResetGame();
     }
-
-    private void Update()
-    {
-        UpdateGameStart();
-
-        if (gameState == GameState.Playing && Input.GetKeyDown(KeyCode.E))
-            UsePotion();
-
-        #region [ Test ]
-        //if (Input.GetKeyDown(KeyCode.KeypadPlus))
-        //    AddPoint(1);
-        #endregion
-    }
+    
 
     public void ResetGame()
     {
@@ -89,18 +77,79 @@ public class GameManager : Singleton<GameManager>
     #region [ Server Message Stack ]
 
     private List<ClientData> nonRespawnedClientList;
-    public List<NetworkData> netDataList;
+    public Queue<NetworkData> netDataList;
+    public Queue<NetworkData> netDataRapid;
 
     private void ResetDataStack()
     {
         nonRespawnedClientList = new List<ClientData>();
-        netDataList = new List<NetworkData>();
+        netDataList = new Queue<NetworkData>();
+        netDataRapid = new Queue<NetworkData>();
+    }
+
+    private void Update()
+    {
+        UpdateGameStart();
+
+        if (gameState == GameState.Playing && Input.GetKeyDown(KeyCode.E))
+            UsePotion();
+
+        if(IOCPManager.GetInstance.isConnected())
+        {
+            while(netDataRapid.Count > 0)
+            {
+                NetworkData front = netDataRapid.Dequeue();
+                switch(front.sendType)
+                {
+                    case SendType.SYNCTRANSFORM:
+                        if (IOCPManager.clientControlList.ContainsKey(front.senderId))
+                            IOCPManager.clientControlList[front.senderId].netSyncTrans.SetTransform(front.position, front.rotation);
+                        break;
+                    case SendType.OBJECT_SYNC_TRANSFORM:
+                        if (networkObjectList.ContainsKey(front.targetId))
+                            networkObjectList[front.targetId].SetTransform(front.position, front.rotation);
+                        break;
+                    case SendType.ANIMATOR_MOVE:
+                        if (IOCPManager.clientControlList.ContainsKey(front.senderId))
+                            IOCPManager.clientControlList[front.senderId].netSyncAnimator.SetAnimatorMove(front);
+                        break;
+                    case SendType.ANIMATOR_TRIGGER:
+                        if (IOCPManager.clientControlList.ContainsKey(front.senderId))
+                            IOCPManager.clientControlList[front.senderId].netSyncAnimator.NetworkReceiveTrigger(front);
+                        break;
+                    case SendType.HIT:
+                        if (IOCPManager.clientControlList.ContainsKey(front.targetId))
+                        {
+                            IOCPManager.clientControlList[front.targetId].LossHealth(front.power, front.senderId);
+                        }
+                        break;
+                    case SendType.ATTACK:
+                        CreateAttack(front);
+                        break;
+                    case SendType.ENEMY_ATTACK:
+                        CreateEnemyAttack(front);
+                        break;
+                    case SendType.DESTROY_OBJECT:
+                        RemoveNetworkObject(front);
+                        break;
+                    case SendType.ADDKILL:
+                        KillOther((int)front.power);
+                        break;
+                    case SendType.SPAWN_ITEM:
+                        CreateItem(front);
+                        break;
+
+                    case SendType.SPAWN_ENEMY:
+                        CreateEnemy(front);
+                        break;
+                }
+            }
+        }
     }
 
     private void FixedUpdate()
     {
-        if (IOCPManager.GetInstance.client != null
-            && IOCPManager.GetInstance.client.connectState == TCPClient.ConnectionState.Connected)
+        if (IOCPManager.GetInstance.isConnected())
         {
             if (gameEndTrigger)
             {
@@ -123,57 +172,60 @@ public class GameManager : Singleton<GameManager>
 
             if(netDataList.Count > 0)
             {
-                for(int i= 0; i < netDataList.Count; i++)
+                int i = 0;
+                while(netDataList.Count > 0)
                 {
-                    switch (netDataList[i].sendType)
+                    NetworkData front = netDataRapid.Dequeue();
+                    switch (front.sendType)
                     {
-                        case SendType.ATTACK:
+                        /*case SendType.ATTACK:
                             CreateAttack(netDataList[i]);
-                            break;
+                            break;*/
 
-                        case SendType.SPAWN_ITEM:
+                        /*case SendType.SPAWN_ITEM:
                             CreateItem(netDataList[i]);
+                            netDataList.RemoveAt(i);
                             break;
 
                         case SendType.SPAWN_ENEMY:
                             CreateEnemy(netDataList[i]);
-                            break;
+                            netDataList.RemoveAt(i);
+                            break;*/
 
-                        case SendType.ENEMY_ATTACK:
+                        /*case SendType.ENEMY_ATTACK:
                             CreateEnemyAttack(netDataList[i]);
-                            break;
+                            break;*/
 
                         case SendType.GAMETIMER:
-                            SetTimer(netDataList[i]);
+                            SetTimer(front);
                             break;
 
                         case SendType.ALARM:
-                            AreaDeactiveAlarm(netDataList[i]);
+                            AreaDeactiveAlarm(front);
                             break;
 
-                        case SendType.DESTORY_OBJECT:
+                        /*case SendType.DESTORY_OBJECT:
                             RemoveNetworkObject(netDataList[i]);
-                            break;
+                            break;*/
 
                         case SendType.DEACTIVATEAREA:
-                            DeactivateArea(netDataList[i]);
+                            DeactivateArea(front);
                             break;
 
-                        case SendType.ADDKILL:
+                        /*case SendType.ADDKILL:
                             KillOther((int)netDataList[i].power);
-                            break;
+                            netDataList.RemoveAt(i);
+                            break;*/
 
                         case SendType.SPAWN_WINNERPOINT:
-                            CreateWinnerPoint(netDataList[i]);
+                            CreateWinnerPoint(front);
                             break;
 
                         case SendType.INWINNERPOINT:
-                            CheckGameState(netDataList[i].senderId);
+                            CheckGameState(front.senderId);
                             break;
                     }
                 }
-
-                netDataList = new List<NetworkData>();
             }
         }
     }
@@ -365,6 +417,8 @@ public class GameManager : Singleton<GameManager>
             senderId = IOCPManager.senderId,
             sendType = SendType.ADDHEALTH,
         });
+        //보낸 클라이언트가 직접 처리
+        IOCPManager.myPlayerControl.AddHealth(GlobalData.ITEM_HEALTH_HEAL_AMOUNT);
     }
 
     private void UpdatePotionCount()
@@ -384,28 +438,29 @@ public class GameManager : Singleton<GameManager>
     private int syncObjectID = 100;
     public Dictionary<int, NetworkSyncTransform> networkObjectList = new Dictionary<int, NetworkSyncTransform>();
 
-    private IEnumerator spanwItemCoroutine;
+    private IEnumerator spawnItemCoroutine;
     private IEnumerator spawnEnemyCoroutine;
     private IEnumerator timerCoroutine;
 
     private void InitHost()
     {
-        spanwItemCoroutine = HostSpawnItem();
+        spawnItemCoroutine = HostSpawnItem();
         spawnEnemyCoroutine = HostSpawnEnemy();
         timerCoroutine = HostTimer();
     }
 
     public void GamePlay()
     {
+        UIManager.GetInstance.SetTargetPanel(PanelType.Play);
         gameState = GameState.Playing;
         isGameStartEvent = true;
     }
 
     private void ResetHost()
     {
-        StopCoroutine(spanwItemCoroutine);
-        StopCoroutine(spawnEnemyCoroutine);
-        StopCoroutine(timerCoroutine);
+        //StopCoroutine(spawnItemCoroutine);
+        //StopCoroutine(spawnEnemyCoroutine);
+        //StopCoroutine(timerCoroutine);
 
         foreach (KeyValuePair<int, NetworkSyncTransform> keyval in networkObjectList)
         {
@@ -430,9 +485,13 @@ public class GameManager : Singleton<GameManager>
     {
         if (IOCPManager.connectionData.isHost)
         {
-            StartCoroutine(spanwItemCoroutine);
-            StartCoroutine(spawnEnemyCoroutine);
-            StartCoroutine(timerCoroutine);
+            //문제 후보1 : 맞음
+            //StartCoroutine(spanwItemCoroutine);
+            //문제 후보2 : 맞음
+            //StartCoroutine(spawnEnemyCoroutine);
+            //문제 후보3 : 아님
+            //StartCoroutine(timerCoroutine);
+            //아무것도 적용 x : 문제 있음
         }
     }
 
@@ -603,7 +662,7 @@ public class GameManager : Singleton<GameManager>
     {
         syncObjectID++;
 
-        IOCPManager.GetInstance.SendToServerMessage(new NetworkData()
+        NetworkData attackData = new NetworkData()
         {
             senderId = IOCPManager.senderId,
             targetId = syncObjectID,
@@ -622,13 +681,15 @@ public class GameManager : Singleton<GameManager>
                 z = attackPoint.eulerAngles.z
             },
             power = power
-        });
+        };
+        IOCPManager.GetInstance.SendToServerMessage(attackData);
+        //Client 자신것은 자기가 만든다.
+        CreateAttack(attackData);
     }
 
-    private void CreateAttack(NetworkData attackData)
+    public void CreateAttack(NetworkData attackData)
     {
-        if (syncObjectID < attackData.targetId)
-            syncObjectID = attackData.targetId + 1;
+        syncObjectID = attackData.targetId;
 
         if (networkObjectList.ContainsKey(attackData.targetId))
             return;
@@ -651,11 +712,16 @@ public class GameManager : Singleton<GameManager>
         networkObjectList.Add(attackData.targetId, attackObj.GetComponent<NetworkSyncTransform>());
     }
 
+    //예기치 못한 원인 : 런타임에서 찾음
     public void RemoveNetworkObject(NetworkData netData)
     {
-        if (networkObjectList[netData.targetId] != null
-            && networkObjectList[netData.targetId].gameObject != null)
-            Destroy(networkObjectList[netData.targetId].gameObject);
+        //키 값이 없는데 삭제하려 할 때가 있음 -> PlayerAtackObject::Dispose가 원인
+        if (networkObjectList.ContainsKey(netData.targetId))
+        {
+            if (networkObjectList[netData.targetId] != null
+                && networkObjectList[netData.targetId].gameObject != null)
+                Destroy(networkObjectList[netData.targetId].gameObject);
+        }
     }
 
     #endregion
@@ -694,8 +760,7 @@ public class GameManager : Singleton<GameManager>
 
     private void CreateEnemyAttack(NetworkData attackData)
     {
-        if (syncObjectID < attackData.targetId)
-            syncObjectID = attackData.targetId + 1;
+        syncObjectID = attackData.targetId;
 
         EnemyData enemyData = enemyDB.Get(attackData.enemyType);
 
@@ -755,14 +820,13 @@ public class GameManager : Singleton<GameManager>
 
     private void CreateItem(NetworkData itemData)
     {
-        if (syncObjectID < itemData.targetId)
-            syncObjectID = itemData.targetId + 1;
+        syncObjectID = itemData.targetId;
 
         GameObject itemObj = Instantiate(itemObjPrefab[(int)itemData.itemType]) as GameObject;
         itemObj.transform.position = new Vector3(itemData.position.x, itemData.position.y, itemData.position.z);
         itemObj.transform.rotation = Quaternion.Euler(new Vector3(itemData.rotation.x, itemData.rotation.y, itemData.rotation.z));
 
-        itemObj.GetComponent<NetworkSyncTransform>().SetObject(itemData.targetId, IOCPManager.connectionData.isHost);
+        itemObj.GetComponent<NetworkSyncTransform>().SetObject(itemData.targetId, IOCPManager.connectionData.isHost);//아이템 Transform은 호스트 소유
 
         networkObjectList.Add(itemData.targetId, itemObj.GetComponent<NetworkSyncTransform>());
     }

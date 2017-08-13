@@ -49,11 +49,10 @@ public class PlayerAttackObject : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (isHit || !IOCPManager.connectionData.isHost)
+        if (isHit || !IOCPManager.connectionData.isHost)//호스트가 처리한다.
             return;
 
         //******if구문 안과 else if 구문 안, 모든 경우에 해당하는 내용*****
-        // 중간 평가시 문제점 중 하나라고 생각된다. (무기로 공격시 동기화 오류 및 렉 발생)
         /* 비동기 통신에서 순서는 통제되지 않는다. 이 점이 매우 중요하다.
          * 아래의 경우에서는 히트 처리를 하고 Dispose를 하도록 명령했다.
          * 그러나 비동기는 그러한 순서를 인식하지 않고 보낸다.
@@ -79,7 +78,7 @@ public class PlayerAttackObject : MonoBehaviour
                 power = damage,
             };
             IOCPManager.GetInstance.SendToServerMessage(hitData);
-            //호스트는 자신이 직접 처리
+            //판단 주체 호스트 클라는 자신이 직접 처리
             pControl.LossHealth(damage, createPlayerId);
 
             Dispose();

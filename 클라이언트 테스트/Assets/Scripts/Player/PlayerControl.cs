@@ -172,6 +172,7 @@ public class PlayerControl : MonoBehaviour
             });
             //보낸 클라이언트가 직접 처리
             DoActionDie();
+            GameManager.GetInstance.CheckGameState();
         }
     }
 

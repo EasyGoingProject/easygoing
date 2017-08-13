@@ -52,6 +52,7 @@ public class PlayerLobbyInfo : MonoBehaviour
         //IOCPManager.GetInstance.SendToServerMessage(readyNetData);
 
         IOCPManager.GetInstance.client.SendClientReady(true);
+        ClientReady();
     }
 
     public void ClientReady()
@@ -72,6 +73,7 @@ public class PlayerLobbyInfo : MonoBehaviour
             senderId = IOCPManager.senderId,
             sendType = SendType.GAMESTART
         });
+        GameManager.GetInstance.GamePlay();
     }
 
     private void FixedUpdate()

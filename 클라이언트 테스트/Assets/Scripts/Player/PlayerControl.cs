@@ -170,6 +170,8 @@ public class PlayerControl : MonoBehaviour
                 targetId = attackerId,
                 sendType = SendType.DIE
             });
+            //보낸 클라이언트가 직접 처리
+            DoActionDie();
         }
     }
 
